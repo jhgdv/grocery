@@ -597,7 +597,7 @@ export default function ListDetail() {
                 anchorTop={60}
                 anchorRight={16}
                 actions={[
-                    { icon: "share-alt", label: "Invite Others", action: () => router.push({ pathname: "/share/invite" as any, params: { listId: id } }), color: "#8E8AFB" },
+                    { icon: "user-plus", label: "Invite Collaborators", action: () => router.push({ pathname: "/share/invite" as any, params: { listId: id } }), color: "#FF7E73" },
                     { icon: "trash-o", label: "Delete List", action: () => router.back(), destructive: true },
                 ]}
             />

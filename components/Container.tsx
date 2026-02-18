@@ -15,7 +15,7 @@ export const Container: React.FC<ContainerProps> = ({ children, style, ...props 
                     backgroundColor: "transparent",
                     marginHorizontal: "auto",
                     width: "100%",
-                    maxWidth: 550, // Roughly half of standard desktop view (e.g. 1080/2)
+                    maxWidth: 1100, // Increased for a better desktop "Flow" feel
                 },
                 style
             ]}

@@ -52,9 +52,8 @@ export default function InviteUser() {
                 throw error;
             }
 
-            setStatusMessage({ type: 'success', text: `Invite stored for ${email}! They can now join by logging in.` });
+            setStatusMessage({ type: 'success', text: `Success! ${email} has been added to the list access. Now share the link below with them.` });
             setIsInvited(true);
-            // Don't clear email immediately so WhatsApp can use it
         } catch (error: any) {
             setStatusMessage({ type: 'error', text: error.message || "Could not send invite." });
         } finally {
@@ -141,8 +140,10 @@ export default function InviteUser() {
                             fontSize: 18,
                             color: "#000000",
                             fontWeight: "600",
-                            marginBottom: 32,
-                            shadowColor: "#000",
+                            marginBottom: 24,
+                            borderWidth: 2,
+                            borderColor: "#FF7E7320",
+                            shadowColor: "#FF7E73",
                             shadowOpacity: 0.05,
                             shadowRadius: 10,
                             elevation: 2
@@ -150,7 +151,11 @@ export default function InviteUser() {
                         placeholder="friend@example.com"
                         placeholderTextColor="#A1A1AA"
                         value={email}
-                        onChangeText={setEmail}
+                        onChangeText={(text) => {
+                            setEmail(text);
+                            setIsInvited(false); // Reset if email changes
+                            setStatusMessage(null);
+                        }}
                         autoCapitalize="none"
                         keyboardType="email-address"
                         autoFocus
@@ -164,63 +169,84 @@ export default function InviteUser() {
                             paddingVertical: 20,
                             borderRadius: 24,
                             alignItems: "center",
-                            backgroundColor: (!email || loading) ? "#E5E5EA" : pressed ? "#7C77E6" : "#8E8AFB",
-                            shadowColor: "#8E8AFB",
+                            backgroundColor: (!email || loading) ? "#E5E5EA" : pressed ? "#E66B61" : "#FF7E73",
+                            shadowColor: "#FF7E73",
                             shadowOpacity: (!email || loading) ? 0 : 0.3,
                             shadowRadius: 15,
                             shadowOffset: { width: 0, height: 8 },
-                            marginBottom: 20
+                            marginBottom: 32
                         })}
                     >
                         {loading ? (
                             <ActivityIndicator color="white" />
                         ) : (
-                            <Text style={{ color: "white", fontWeight: "800", fontSize: 18, letterSpacing: 1 }}>Send Invite</Text>
+                            <Text style={{ color: "white", fontWeight: "800", fontSize: 18, letterSpacing: 1 }}>
+                                {isInvited ? "Invite Stored ✓" : "1. Add to List"}
+                            </Text>
                         )}
                     </Pressable>
 
-                    <Pressable
-                        onPress={async () => {
-                            const baseUrl = Platform.OS === 'web' ? window.location.origin : 'https://grocery-app.vercel.app';
-                            const msg = `Hey! I shared the list "${listName}" with you. Log in with your email ${email} to collaborate: ${baseUrl}`;
+                    <Text style={{ color: "#000000", fontSize: 13, fontWeight: "800", marginBottom: 16, textAlign: "center", textTransform: "uppercase", letterSpacing: 1.5, opacity: isInvited ? 1 : 0.3 }}>
+                        2. Share the link
+                    </Text>
 
-                            try {
-                                if (Platform.OS === 'web') {
-                                    if (navigator.share) {
-                                        await navigator.share({
-                                            title: `Grocery List: ${listName}`,
-                                            text: msg,
-                                            url: baseUrl,
-                                        });
-                                    } else {
+                    <View style={{ flexDirection: "row", gap: 12 }}>
+                        <Pressable
+                            onPress={async () => {
+                                const baseUrl = 'https://grocery-app.vercel.app';
+                                const msg = `Hey! I shared the list "${listName}" with you. Join here: ${baseUrl}`;
+
+                                try {
+                                    if (Platform.OS === 'web') {
                                         window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                                    } else {
+                                        await Share.share({ message: msg });
                                     }
-                                } else {
-                                    await Share.share({
-                                        message: msg,
-                                        url: baseUrl,
-                                    });
-                                }
-                            } catch (e) {
-                                console.log("Sharing failed", e);
-                            }
-                        }}
-                        style={({ pressed }) => ({
-                            width: "100%",
-                            paddingVertical: 18,
-                            borderRadius: 24,
-                            alignItems: "center",
-                            backgroundColor: pressed ? "rgba(34, 197, 94, 0.05)" : "transparent",
-                            borderWidth: 2,
-                            borderColor: isInvited ? "#22C55E" : "#E5E5EA",
-                            opacity: isInvited ? (pressed ? 0.7 : 1) : 0.5
-                        })}
-                        disabled={!isInvited}
-                    >
-                        <Text style={{ color: isInvited ? "#166534" : "#A1A1AA", fontWeight: "800", fontSize: 16 }}>
-                            {isInvited ? "Share via WhatsApp / App" : "Invite email first..."}
+                                } catch (e) { console.log(e); }
+                            }}
+                            style={({ pressed }) => ({
+                                flex: 1,
+                                paddingVertical: 18,
+                                borderRadius: 24,
+                                alignItems: "center",
+                                backgroundColor: isInvited ? (pressed ? "#F0FDF4" : "white") : "transparent",
+                                borderWidth: 2,
+                                borderColor: isInvited ? "#22C55E" : "#E5E5EA",
+                                opacity: isInvited ? 1 : 0.4
+                            })}
+                            disabled={!isInvited}
+                        >
+                            <FontAwesome name="whatsapp" size={20} color={isInvited ? "#22C55E" : "#A1A1AA"} />
+                        </Pressable>
+
+                        <Pressable
+                            onPress={() => {
+                                const baseUrl = 'https://grocery-app.vercel.app';
+                                const subject = encodeURIComponent(`Invitation to collaborate on "${listName}"`);
+                                const body = encodeURIComponent(`Hey!\n\nI've invited you to collaborate on my grocery list "${listName}".\n\nYou can access it here: ${baseUrl}\n\n(Make sure to log in with your email: ${email})`);
+                                window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+                            }}
+                            style={({ pressed }) => ({
+                                flex: 1,
+                                paddingVertical: 18,
+                                borderRadius: 24,
+                                alignItems: "center",
+                                backgroundColor: isInvited ? (pressed ? "#F0F9FF" : "white") : "transparent",
+                                borderWidth: 2,
+                                borderColor: isInvited ? "#0EA5E9" : "#E5E5EA",
+                                opacity: isInvited ? 1 : 0.4
+                            })}
+                            disabled={!isInvited}
+                        >
+                            <FontAwesome name="envelope" size={18} color={isInvited ? "#0EA5E9" : "#A1A1AA"} />
+                        </Pressable>
+                    </View>
+
+                    {!isInvited && (
+                        <Text style={{ marginTop: 24, textAlign: "center", color: "#A1A1AA", fontSize: 14, fontStyle: "italic" }}>
+                            You must add the email to the list first so they have permission to see it.
                         </Text>
-                    </Pressable>
+                    )}
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
