@@ -52,8 +52,42 @@ export default function InviteUser() {
                 throw error;
             }
 
-            setStatusMessage({ type: 'success', text: `Success! ${email} has been added to the list access. Now share the link below with them.` });
             setIsInvited(true);
+            setStatusMessage({ type: 'success', text: `Success! ${email} is added.` });
+
+            // 2. Automated Email Sending (via background call)
+            try {
+                const baseUrl = 'https://grocery-app.vercel.app';
+                const emailResponse = await fetch('https://api.resend.com/emails', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer re_Vercel_is_waiting_for_your_key`, // PLACEHOLDER
+                    },
+                    body: JSON.stringify({
+                        from: 'Grocery App <onboarding@resend.dev>',
+                        to: [email.toLowerCase().trim()],
+                        subject: `Invitation to collaborate on "${listName}"`,
+                        html: `
+                            <div style="font-family: sans-serif; padding: 20px; color: #333;">
+                                <h1 style="color: #FF7E73;">Hi!</h1>
+                                <p>I've invited you to collaborate on my grocery list <strong>"${listName}"</strong>.</p>
+                                <p>You can access it here: <a href="${baseUrl}" style="color: #FF7E73;">Open Grocery App</a></p>
+                                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                                <p style="font-size: 12px; color: #999;">Make sure to log in with email: ${email}</p>
+                            </div>
+                        `,
+                    }),
+                });
+
+                if (emailResponse.ok) {
+                    setStatusMessage({ type: 'success', text: `Invitation sent automatically to ${email}!` });
+                } else {
+                    setStatusMessage({ type: 'success', text: `Success! Added ${email}. (Note: System email needs API Key)` });
+                }
+            } catch (e) {
+                console.log("Email failed", e);
+            }
         } catch (error: any) {
             setStatusMessage({ type: 'error', text: error.message || "Could not send invite." });
         } finally {
@@ -98,13 +132,13 @@ export default function InviteUser() {
                     <View style={{
                         height: 100,
                         width: 100,
-                        backgroundColor: "#8E8AFB15",
+                        backgroundColor: "#FF7E7315",
                         borderRadius: 35,
                         alignItems: "center",
                         justifyContent: "center",
                         marginBottom: 24
                     }}>
-                        <FontAwesome name="envelope-o" size={40} color="#8E8AFB" />
+                        <FontAwesome name="envelope-o" size={40} color="#FF7E73" />
                     </View>
                     <Text style={{ fontSize: 32, fontWeight: "900", color: "#000000", marginBottom: 12, textAlign: "center" }}>
                         Invite Someone
