@@ -69,7 +69,7 @@ export default function Verify() {
                     </Text>
                     <Text style={{ color: "#71717A", textAlign: "center", fontSize: 17, fontWeight: "500", lineHeight: 24 }}>
                         We've sent a code to{"\n"}
-                        <Text style={{ fontWeight: "800", color: "#8E8AFB" }}>{email}</Text>
+                        <Text style={{ fontWeight: "800", color: "#FF7E73" }}>{email}</Text>
                     </Text>
                 </View>
 
@@ -86,7 +86,7 @@ export default function Verify() {
                                 fontWeight: "800",
                                 color: "#000000",
                                 letterSpacing: 8,
-                                shadowColor: "#8E8AFB",
+                                shadowColor: "#FF7E73",
                                 shadowOpacity: 0.1,
                                 shadowRadius: 20,
                                 shadowOffset: { width: 0, height: 10 },
@@ -107,11 +107,11 @@ export default function Verify() {
                     <TouchableOpacity
                         style={{
                             width: "100%",
-                            backgroundColor: "#8E8AFB",
+                            backgroundColor: "#FF7E73",
                             paddingVertical: 20,
                             borderRadius: 24,
                             alignItems: "center",
-                            shadowColor: "#8E8AFB",
+                            shadowColor: "#FF7E73",
                             shadowOpacity: 0.3,
                             shadowRadius: 15,
                             shadowOffset: { width: 0, height: 8 },
@@ -133,7 +133,7 @@ export default function Verify() {
                         style={{ marginTop: 24 }}
                     >
                         <Text style={{ textAlign: "center", color: "#71717A", fontWeight: "700" }}>
-                            Wrong email? <Text style={{ color: "#8E8AFB" }}>Try again</Text>
+                            Wrong email? <Text style={{ color: "#FF7E73" }}>Try again</Text>
                         </Text>
                     </TouchableOpacity>
                 </View>

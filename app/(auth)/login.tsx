@@ -190,11 +190,11 @@ export default function Login() {
                         disabled={loading}
                         style={({ pressed }) => ({
                             width: "100%",
-                            backgroundColor: pressed ? "#7C77E6" : "#8E8AFB",
+                            backgroundColor: pressed ? "#E66B61" : "#FF7E73",
                             paddingVertical: 20,
                             borderRadius: 24,
                             alignItems: "center",
-                            shadowColor: "#8E8AFB",
+                            shadowColor: "#FF7E73",
                             shadowOpacity: 0.3,
                             shadowRadius: 15,
                             shadowOffset: { width: 0, height: 8 },
