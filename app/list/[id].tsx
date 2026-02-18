@@ -372,8 +372,8 @@ export default function ListDetail() {
                         {item.image_url && (
                             <Image
                                 source={{ uri: item.image_url }}
-                                style={{ width: "100%", height: 180, borderRadius: 20, marginBottom: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.5)" }}
-                                resizeMode="cover"
+                                style={{ width: "100%", height: 300, borderRadius: 20, marginBottom: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.5)" }}
+                                resizeMode="contain"
                             />
                         )}
 
