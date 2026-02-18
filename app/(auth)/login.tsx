@@ -87,7 +87,7 @@ export default function Login() {
                         shadowOffset: { width: 0, height: 10 },
                         marginBottom: 24
                     }}>
-                        <Logo size={60} />
+                        <Logo size={60} showText={false} />
                     </View>
 
                     <Text style={{
@@ -128,24 +128,25 @@ export default function Login() {
                         </View>
                     ) : null}
 
-                    <View style={{ marginBottom: 20 }}>
-                        <Text style={{ color: "#000000", fontSize: 14, fontWeight: "800", marginBottom: 10, marginLeft: 6, textTransform: "uppercase", letterSpacing: 1 }}>Name</Text>
+                    <View style={{ marginBottom: 16 }}>
                         <TextInput
                             style={{
                                 width: "100%",
                                 backgroundColor: "white",
                                 paddingHorizontal: 24,
-                                paddingVertical: 18,
+                                paddingVertical: 20,
                                 borderRadius: 24,
                                 fontSize: 17,
                                 fontWeight: "600",
                                 color: "#000000",
                                 shadowColor: "#000",
-                                shadowOpacity: 0.05,
-                                shadowRadius: 10,
-                                elevation: 2
+                                shadowOpacity: 0.04,
+                                shadowRadius: 12,
+                                elevation: 2,
+                                borderWidth: 1,
+                                borderColor: "rgba(0,0,0,0.03)"
                             }}
-                            placeholder="Your Name"
+                            placeholder="Full Name"
                             placeholderTextColor="#A1A1AA"
                             value={fullName}
                             onChangeText={(text) => {
@@ -157,23 +158,24 @@ export default function Login() {
                     </View>
 
                     <View style={{ marginBottom: 32 }}>
-                        <Text style={{ color: "#000000", fontSize: 14, fontWeight: "800", marginBottom: 10, marginLeft: 6, textTransform: "uppercase", letterSpacing: 1 }}>Email</Text>
                         <TextInput
                             style={{
                                 width: "100%",
                                 backgroundColor: "white",
                                 paddingHorizontal: 24,
-                                paddingVertical: 18,
+                                paddingVertical: 20,
                                 borderRadius: 24,
                                 fontSize: 17,
                                 fontWeight: "600",
                                 color: "#000000",
                                 shadowColor: "#000",
-                                shadowOpacity: 0.05,
-                                shadowRadius: 10,
-                                elevation: 2
+                                shadowOpacity: 0.04,
+                                shadowRadius: 12,
+                                elevation: 2,
+                                borderWidth: 1,
+                                borderColor: "rgba(0,0,0,0.03)"
                             }}
-                            placeholder="you@example.com"
+                            placeholder="Email Address"
                             placeholderTextColor="#A1A1AA"
                             value={email}
                             onChangeText={(text) => {
