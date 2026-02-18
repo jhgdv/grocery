@@ -37,21 +37,24 @@ function RootLayoutContent() {
         <View style={{
             flex: 1,
             flexDirection: showSidebar ? "row" : "column",
-            backgroundColor: "transparent" // Let the global gradient show through
+            backgroundColor: "transparent"
         }}>
             {showSidebar && <Sidebar />}
             <View style={{
                 flex: 1,
-                backgroundColor: showSidebar ? "rgba(255, 255, 255, 0.75)" : "transparent",
+                backgroundColor: showSidebar ? "rgba(255, 255, 255, 0.1)" : "transparent", // Minimal white, maximum glass
                 margin: showSidebar ? 24 : 0,
-                borderRadius: showSidebar ? 32 : 0,
+                borderRadius: showSidebar ? 48 : 0,
                 shadowColor: "#000",
                 shadowOpacity: showSidebar ? 0.05 : 0,
-                shadowRadius: 30,
+                shadowRadius: 50,
                 overflow: "hidden",
                 display: "flex",
                 borderWidth: showSidebar ? 1 : 0,
-                borderColor: "rgba(255, 255, 255, 0.5)"
+                borderColor: "rgba(255, 255, 255, 0.25)",
+                // @ts-ignore
+                backdropFilter: showSidebar ? "blur(60px) saturate(180%)" : "none",
+                WebkitBackdropFilter: showSidebar ? "blur(60px) saturate(180%)" : "none"
             }}>
                 <Container style={!showSidebar ? { maxWidth: 550 } : undefined}>
                     <Slot />

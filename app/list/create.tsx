@@ -62,37 +62,56 @@ export default function CreateList() {
 
                 <View style={{ flex: 1 }}>
                     <View style={{ marginBottom: 32 }}>
-                        <Text style={{ marginBottom: 12, color: "#6b7280", fontWeight: "600" }}>List name</Text>
+                        <Text style={{ marginBottom: 12, color: "#71717A", fontWeight: "600" }}>List name</Text>
                         <TextInput
-                            style={{ backgroundColor: "rgba(255,255,255,0.8)", padding: 16, borderRadius: 16, borderWidth: 1, borderColor: "rgba(229,231,235,0.6)", fontSize: 18, color: "#1f2937" }}
+                            style={{
+                                backgroundColor: "rgba(255,255,255,0.4)",
+                                padding: 20,
+                                borderRadius: 24,
+                                borderWidth: 1,
+                                borderColor: "rgba(255,255,255,0.5)",
+                                fontSize: 18,
+                                color: "#000000",
+                                fontWeight: "600"
+                            }}
                             placeholder="e.g. Groceries"
-                            placeholderTextColor="#9ca3af"
+                            placeholderTextColor="#A1A1AA"
                             value={name}
                             onChangeText={setName}
                             autoFocus
                         />
                     </View>
 
-                    <Text style={{ marginBottom: 12, color: "#6b7280", fontWeight: "600" }}>Choose Icon</Text>
-                    <View style={{ flex: 1, backgroundColor: "rgba(255,255,255,0.4)", borderRadius: 20, marginBottom: 24, borderWidth: 1, borderColor: "rgba(0,0,0,0.05)", overflow: "hidden" }}>
-                        <ScrollView contentContainerStyle={{ padding: 12 }} showsVerticalScrollIndicator={true}>
-                            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "flex-start" }}>
+                    <Text style={{ marginBottom: 12, color: "#71717A", fontWeight: "600" }}>Choose Icon</Text>
+                    <View style={{
+                        flex: 1,
+                        backgroundColor: "rgba(255,255,255,0.2)",
+                        borderRadius: 32,
+                        marginBottom: 24,
+                        borderWidth: 1,
+                        borderColor: "rgba(255,255,255,0.3)",
+                        overflow: "hidden",
+                        // @ts-ignore
+                        backdropFilter: "blur(20px)"
+                    }}>
+                        <ScrollView contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={true}>
+                            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "flex-start" }}>
                                 {ICONS.map((icon, idx) => (
                                     <Pressable
                                         key={`${icon}-${idx}`}
                                         onPress={() => setSelectedIcon(icon)}
                                         style={{
-                                            height: 44,
-                                            width: 44,
-                                            borderRadius: 22,
+                                            height: 52,
+                                            width: 52,
+                                            borderRadius: 20,
                                             alignItems: "center",
                                             justifyContent: "center",
                                             borderWidth: 2,
-                                            borderColor: selectedIcon === icon ? "#D97D73" : "transparent",
-                                            backgroundColor: selectedIcon === icon ? "#D97D7315" : "rgba(255,255,255,0.6)",
+                                            borderColor: selectedIcon === icon ? "#FF7E73" : "transparent",
+                                            backgroundColor: selectedIcon === icon ? "#FF7E7315" : "rgba(255,255,255,0.4)",
                                         }}
                                     >
-                                        <Text style={{ fontSize: 22 }}>{icon}</Text>
+                                        <Text style={{ fontSize: 26 }}>{icon}</Text>
                                     </Pressable>
                                 ))}
                             </View>
@@ -104,23 +123,21 @@ export default function CreateList() {
                         onPress={handleCreate}
                         disabled={loading || !name.trim()}
                         style={({ pressed }) => ({
-                            paddingVertical: 16,
-                            borderRadius: 16,
+                            paddingVertical: 20,
+                            borderRadius: 24,
                             alignItems: "center" as const,
-                            backgroundColor: (!name.trim() || loading) ? "#d1d5db" : pressed ? "#D97D73" : "#D97D73",
-                            opacity: (!name.trim() || loading) ? 0.6 : pressed ? 0.85 : 1,
-                            cursor: "pointer" as any,
-                            shadowColor: "#D97D73",
-                            shadowOffset: { width: 0, height: 4 },
-                            shadowOpacity: 0.3,
-                            shadowRadius: 8,
+                            backgroundColor: (!name.trim() || loading) ? "#E5E7EB" : "#FF7E73",
+                            shadowColor: "#FF7E73",
+                            shadowOffset: { width: 0, height: 10 },
+                            shadowOpacity: (!name.trim() || loading) ? 0 : 0.3,
+                            shadowRadius: 15,
                             marginBottom: 40
                         })}
                     >
                         {loading ? (
                             <ActivityIndicator color="white" />
                         ) : (
-                            <Text style={{ color: "white", fontWeight: "700", fontSize: 18 }}>Create List</Text>
+                            <Text style={{ color: "white", fontWeight: "800", fontSize: 18 }}>Create List</Text>
                         )}
                     </Pressable>
                 </View>

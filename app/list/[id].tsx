@@ -517,28 +517,30 @@ export default function ListDetail() {
                         height: 48,
                         width: 48,
                         borderRadius: 24,
-                        backgroundColor: "white",
+                        backgroundColor: "rgba(255, 255, 255, 0.4)",
                         alignItems: "center",
                         justifyContent: "center",
                         shadowColor: "#000",
                         shadowOpacity: 0.05,
                         shadowRadius: 10,
-                        elevation: 2
+                        elevation: 2,
+                        // @ts-ignore
+                        backdropFilter: "blur(10px)"
                     }}
                     hitSlop={12}
                 >
-                    <FontAwesome name="ellipsis-h" size={18} color="#000000" />
+                    <FontAwesome name="ellipsis-v" size={18} color="#000000" />
                 </TouchableOpacity>
             </View>
 
             {loading ? (
-                <ActivityIndicator color="#8E8AFB" style={{ marginTop: 40 }} />
+                <ActivityIndicator color="#FF7E73" style={{ marginTop: 40 }} />
             ) : (
                 <FlatList
                     data={[...uncheckedItems, ...checkedItems]}
                     keyExtractor={(item) => item.id}
                     renderItem={({ item, index }) => renderItem({ item, index, isLast: false })}
-                    contentContainerStyle={{ paddingBottom: 120, paddingTop: 10 }}
+                    contentContainerStyle={{ paddingBottom: 150, paddingTop: 10 }}
                     showsVerticalScrollIndicator={false}
                 />
             )}
@@ -552,22 +554,24 @@ export default function ListDetail() {
                 <View style={{
                     flexDirection: "row",
                     alignItems: "center",
-                    backgroundColor: "white",
+                    backgroundColor: "rgba(255, 255, 255, 0.4)",
                     padding: 8,
                     paddingLeft: 24,
                     borderRadius: 28,
-                    shadowColor: "#8E8AFB",
-                    shadowOpacity: 0.2,
+                    shadowColor: "#FF7E73",
+                    shadowOpacity: 0.1,
                     shadowRadius: 20,
                     shadowOffset: { width: 0, height: 10 },
                     elevation: 8,
                     borderWidth: 1,
-                    borderColor: "rgba(255,255,255,0.8)"
+                    borderColor: "rgba(255,255,255,0.5)",
+                    // @ts-ignore
+                    backdropFilter: "blur(20px)"
                 }}>
                     <TextInput
                         style={{ flex: 1, color: "#000000", fontWeight: "600", fontSize: 16, height: 52 }}
                         placeholder="What else do you need?"
-                        placeholderTextColor="#A1A1AA"
+                        placeholderTextColor="#71717A"
                         value={newItem}
                         onChangeText={setNewItem}
                         onSubmitEditing={addItem}
@@ -575,13 +579,16 @@ export default function ListDetail() {
                     <TouchableOpacity
                         onPress={addItem}
                         style={{
-                            backgroundColor: "#8E8AFB",
+                            backgroundColor: "#FF7E73",
                             height: 44,
                             width: 44,
                             borderRadius: 22,
                             alignItems: "center",
                             justifyContent: "center",
-                            marginLeft: 12
+                            marginLeft: 12,
+                            shadowColor: "#FF7E73",
+                            shadowOpacity: 0.3,
+                            shadowRadius: 10
                         }}
                         activeOpacity={0.8}
                     >
