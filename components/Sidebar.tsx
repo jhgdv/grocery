@@ -37,12 +37,15 @@ export const Sidebar = () => {
         <View style={{
             width: 280,
             height: "100%",
-            backgroundColor: "white",
+            backgroundColor: "rgba(255, 255, 255, 0.2)", // Translucent
             borderRightWidth: 1,
-            borderRightColor: "rgba(0,0,0,0.05)",
+            borderRightColor: "rgba(255, 255, 255, 0.3)",
             padding: 24,
             display: "flex",
-            flexDirection: "column"
+            flexDirection: "column",
+            // @ts-ignore
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)"
         }}>
             <View style={{ marginBottom: 40 }}>
                 <Logo size={36} />
