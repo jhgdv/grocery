@@ -19,8 +19,11 @@ export default function ListDetail() {
     const [newItem, setNewItem] = useState("");
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
     const [listName, setListName] = useState("");
+    const [selectedList, setSelectedList] = useState<any>(null);
     const [actionModalVisible, setActionModalVisible] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [editingItemId, setEditingItemId] = useState<string | null>(null);
+    const [editingItemName, setEditingItemName] = useState("");
 
     useEffect(() => {
         if (id) {
@@ -126,6 +129,20 @@ export default function ListDetail() {
         await supabase.from("items").update({ notes }).eq("id", itemId);
     };
 
+    const updateItemName = async (itemId: string, newName: string) => {
+        if (!newName.trim()) {
+            setEditingItemId(null);
+            return;
+        }
+        setItems(prev => prev.map(i => i.id === itemId ? { ...i, name: newName.trim() } : i));
+        const { error } = await supabase.from("items").update({ name: newName.trim() }).eq("id", itemId);
+        if (error) {
+            Alert.alert("Error", "Could not update item name");
+            fetchItems();
+        }
+        setEditingItemId(null);
+    };
+
     const pickImage = async (itemId: string) => {
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
@@ -225,26 +242,54 @@ export default function ListDetail() {
                         {isChecked && <FontAwesome name="check" size={12} color="white" />}
                     </TouchableOpacity>
 
-                    <TouchableOpacity
-                        style={{ flex: 1 }}
-                        onPress={() => toggleExpand(item.id)}
-                        activeOpacity={0.8}
-                    >
-                        <Text style={{
-                            fontSize: 16,
-                            fontWeight: "500",
-                            color: isChecked ? "#9ca3af" : "#1f2937",
-                            textDecorationLine: isChecked ? "line-through" : "none",
-                        }}>
-                            {item.name}
-                        </Text>
-                        {(item.notes || item.image_url) && !isChecked && (
-                            <View style={{ flexDirection: "row", marginTop: 4 }}>
-                                {item.notes ? <FontAwesome name="sticky-note" size={11} color="#9ca3af" style={{ marginRight: 6 }} /> : null}
-                                {item.image_url ? <FontAwesome name="image" size={11} color="#9ca3af" /> : null}
-                            </View>
+                    <View style={{ flex: 1 }}>
+                        {editingItemId === item.id ? (
+                            <TextInput
+                                style={{
+                                    fontSize: 16,
+                                    fontWeight: "600",
+                                    color: "#000000",
+                                    paddingVertical: 4,
+                                    borderBottomWidth: 1,
+                                    borderBottomColor: "#D97D73",
+                                }}
+                                value={editingItemName}
+                                onChangeText={setEditingItemName}
+                                onBlur={() => updateItemName(item.id, editingItemName)}
+                                onSubmitEditing={() => updateItemName(item.id, editingItemName)}
+                                autoFocus
+                            />
+                        ) : (
+                            <TouchableOpacity
+                                onPress={() => toggleExpand(item.id)}
+                                onLongPress={() => {
+                                    setEditingItemId(item.id);
+                                    setEditingItemName(item.name);
+                                }}
+                                activeOpacity={0.8}
+                            >
+                                <Text
+                                    onPress={() => {
+                                        setEditingItemId(item.id);
+                                        setEditingItemName(item.name);
+                                    }}
+                                    style={{
+                                        fontSize: 16,
+                                        fontWeight: "600",
+                                        color: isChecked ? "#9ca3af" : "#000000",
+                                        textDecorationLine: isChecked ? "line-through" : "none",
+                                    }}>
+                                    {item.name}
+                                </Text>
+                                {(item.notes || item.image_url) && !isChecked && (
+                                    <View style={{ flexDirection: "row", marginTop: 4 }}>
+                                        {item.notes ? <FontAwesome name="sticky-note" size={11} color="#4b5563" style={{ marginRight: 6 }} /> : null}
+                                        {item.image_url ? <FontAwesome name="image" size={11} color="#4b5563" /> : null}
+                                    </View>
+                                )}
+                            </TouchableOpacity>
                         )}
-                    </TouchableOpacity>
+                    </View>
 
                     <TouchableOpacity onPress={() => toggleExpand(item.id)} style={{ padding: 4 }}>
                         <FontAwesome name={isExpanded ? "chevron-up" : "chevron-down"} size={12} color="#cbd5e1" />

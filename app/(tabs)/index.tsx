@@ -6,6 +6,7 @@ import { useRouter, useFocusEffect } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
 import { ListActionModal } from "../../components/ListActionModal";
+import { IconPickerModal } from "../../components/IconPickerModal";
 import { supabase } from "../../lib/supabase";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -18,6 +19,7 @@ export default function Lists() {
     const [loading, setLoading] = useState(true);
     const [selectedList, setSelectedList] = useState<any>(null);
     const [actionModalVisible, setActionModalVisible] = useState(false);
+    const [iconModalVisible, setIconModalVisible] = useState(false);
     const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
     const [pendingInvites, setPendingInvites] = useState<any[]>([]);
     const isFocused = useIsFocused();
@@ -156,6 +158,16 @@ export default function Lists() {
         }
     };
 
+    const updateListIcon = async (listId: string, icon: string) => {
+        try {
+            const { error } = await supabase.from("lists").update({ icon }).eq("id", listId);
+            if (error) throw error;
+            setLists(prev => prev.map(l => l.id === listId ? { ...l, icon } : l));
+        } catch (error) {
+            Alert.alert("Error", "Could not update icon");
+        }
+    };
+
     const duplicateList = async (list: any) => {
         try {
             const { data, error } = await supabase
@@ -204,6 +216,11 @@ export default function Lists() {
         setActionModalVisible(true);
     };
 
+    const openIconPicker = (list: any) => {
+        setSelectedList(list);
+        setIconModalVisible(true);
+    };
+
     const sortedLists = [...lists].sort((a, b) => {
         const aPinned = pinnedIds.has(a.id);
         const bPinned = pinnedIds.has(b.id);
@@ -246,15 +263,18 @@ export default function Lists() {
                         </TouchableOpacity>
                     </View>
 
-                    <View style={{ height: 42, width: 42, backgroundColor: "#D97D7315", borderRadius: 21, alignItems: "center", justifyContent: "center", marginRight: 16 }}>
-                        <Text style={{ fontSize: 20 }}>{item.icon || "🛒"}</Text>
-                    </View>
+                    <TouchableOpacity
+                        onPress={(e) => { e.stopPropagation(); openIconPicker(item); }}
+                        style={{ height: 44, width: 44, backgroundColor: "#D97D7315", borderRadius: 22, alignItems: "center", justifyContent: "center", marginRight: 16, borderWidth: 1, borderColor: "#D97D7320" }}
+                    >
+                        <Text style={{ fontSize: 22 }}>{item.icon || "🛒"}</Text>
+                    </TouchableOpacity>
                     <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center" }}>
                             {isPinned && <FontAwesome name="thumb-tack" size={12} color="#22c55e" style={{ marginRight: 6 }} />}
-                            <Text style={{ fontSize: 16, fontWeight: "700", color: "#1f2937" }} numberOfLines={1}>{item.name}</Text>
+                            <Text style={{ fontSize: 17, fontWeight: "700", color: "#000000" }} numberOfLines={1}>{item.name}</Text>
                         </View>
-                        <Text style={{ color: "#6b7280", fontSize: 13, marginTop: 2 }}>View items</Text>
+                        <Text style={{ color: "#4b5563", fontSize: 14, fontWeight: "500", marginTop: 2 }}>View items</Text>
                     </View>
                 </View>
                 <TouchableOpacity onPress={(e) => { e.stopPropagation(); openActions(item); }} style={{ padding: 8 }} hitSlop={8}>
@@ -367,10 +387,18 @@ export default function Lists() {
                         action: () => togglePin(selectedList?.id),
                         color: "#22c55e",
                     },
+                    { icon: "smile-o", label: "Change Icon", action: () => { setActionModalVisible(false); setIconModalVisible(true); }, color: "#D97D73" },
                     { icon: "clone", label: "Duplicate", action: () => duplicateList(selectedList), color: "#1f2937" },
                     { icon: "share-alt", label: "Share", action: () => router.push({ pathname: "/share/invite" as any, params: { listId: selectedList?.id } }), color: "#1f2937" },
                     { icon: "trash-o", label: "Delete", action: () => deleteList(selectedList?.id), destructive: true },
                 ]}
+            />
+
+            <IconPickerModal
+                visible={iconModalVisible}
+                onClose={() => setIconModalVisible(false)}
+                onSelect={(icon) => updateListIcon(selectedList.id, icon)}
+                selectedIcon={selectedList?.icon}
             />
         </SafeAreaView>
     );
