@@ -1,8 +1,8 @@
 import "../global.css";
 import React from "react";
-import { Platform, View } from "react-native";
-import { Slot } from "expo-router";
-import { AuthProvider } from "../context/AuthContext";
+import { Platform, View, useWindowDimensions } from "react-native";
+import { Slot, useSegments } from "expo-router";
+import { AuthProvider, useAuth } from "../context/AuthContext";
 import { ThemeProvider } from "../context/ThemeContext";
 import { Container } from "../components/Container";
 import { Sidebar } from "../components/Sidebar";
@@ -16,33 +16,55 @@ const MyTheme = {
     },
 };
 
+function RootLayoutContent() {
+    const { user, loading } = useAuth();
+    const segments = useSegments();
+    const { width } = useWindowDimensions();
+
+    // Check if we are in the auth flow
+    const isAuthScreen = segments[0] === "(auth)";
+
+    // Sidebar should only show on web, on large screens (not mobile), 
+    // when NOT on an auth screen, and when the user is logged in.
+    const showSidebar = Platform.OS === "web" && width > 768 && !isAuthScreen && user;
+
+    // Loading state handling (optional, but good for UX)
+    if (loading && !user && !isAuthScreen) {
+        return <View style={{ flex: 1, backgroundColor: "#F9FAFB" }} />;
+    }
+
+    return (
+        <View style={{
+            flex: 1,
+            flexDirection: showSidebar ? "row" : "column",
+            backgroundColor: showSidebar ? "#F9FAFB" : "transparent"
+        }}>
+            {showSidebar && <Sidebar />}
+            <View style={{
+                flex: 1,
+                backgroundColor: showSidebar ? "white" : "transparent",
+                margin: showSidebar ? 24 : 0,
+                borderRadius: showSidebar ? 32 : 0,
+                shadowColor: "#000",
+                shadowOpacity: showSidebar ? 0.05 : 0,
+                shadowRadius: 30,
+                overflow: "hidden",
+                display: "flex"
+            }}>
+                <Container style={!showSidebar ? { maxWidth: 550 } : undefined}>
+                    <Slot />
+                </Container>
+            </View>
+        </View>
+    );
+}
+
 export default function Layout() {
     return (
         <AuthProvider>
             <ThemeProvider>
                 <NavThemeProvider value={MyTheme}>
-                    <View style={{
-                        flex: 1,
-                        flexDirection: Platform.OS === "web" ? "row" : "column",
-                        backgroundColor: Platform.OS === "web" ? "#F9FAFB" : "transparent"
-                    }}>
-                        {Platform.OS === "web" && <Sidebar />}
-                        <View style={{
-                            flex: 1,
-                            backgroundColor: Platform.OS === "web" ? "white" : "transparent",
-                            margin: Platform.OS === "web" ? 24 : 0,
-                            borderRadius: Platform.OS === "web" ? 32 : 0,
-                            shadowColor: "#000",
-                            shadowOpacity: Platform.OS === "web" ? 0.05 : 0,
-                            shadowRadius: 30,
-                            overflow: "hidden",
-                            display: "flex"
-                        }}>
-                            <Container>
-                                <Slot />
-                            </Container>
-                        </View>
-                    </View>
+                    <RootLayoutContent />
                 </NavThemeProvider>
             </ThemeProvider>
         </AuthProvider>
