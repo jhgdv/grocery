@@ -76,7 +76,10 @@ export default function Login() {
                 <View className="items-center mb-10">
                     <Logo size={80} />
                     <View style={{ height: 16 }} />
-                    <Text className="text-4xl font-bold text-primary dark:text-white mb-2 tracking-tight">
+                    <Text
+                        style={{ color: "#D97D73" }}
+                        className="text-4xl font-bold mb-2 tracking-tight"
+                    >
                         Grocery
                     </Text>
                     <Text className="text-text-secondary dark:text-gray-400 text-center font-medium text-base">
