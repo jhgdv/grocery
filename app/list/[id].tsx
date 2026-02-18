@@ -27,10 +27,25 @@ export default function ListDetail() {
     const [editingNotes, setEditingNotes] = useState<{ [key: string]: string }>({});
 
     useEffect(() => {
-        if (id) {
-            fetchListDetails();
-            fetchItems();
-        }
+        if (!id) return;
+
+        fetchListDetails();
+        fetchItems();
+
+        // Real-time synchronization for items and list name
+        const channel = supabase
+            .channel(`list-sync-${id}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'items', filter: `list_id=eq.${id}` }, () => {
+                fetchItems();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'lists', filter: `id=eq.${id}` }, () => {
+                fetchListDetails();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [id]);
 
     const fetchListDetails = async () => {

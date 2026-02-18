@@ -13,17 +13,52 @@ export const Sidebar = () => {
     const [lists, setLists] = React.useState<any[]>([]);
 
     React.useEffect(() => {
-        if (user) {
-            fetchLists();
-        }
+        if (!user) return;
+
+        fetchLists();
+
+        // Realtime subscription for syncing lists across components
+        const listsChannel = supabase
+            .channel('sidebar-lists')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'lists' }, () => {
+                fetchLists();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'list_shares' }, () => {
+                fetchLists();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(listsChannel);
+        };
     }, [user]);
 
     const fetchLists = async () => {
-        const { data } = await supabase
+        if (!user) return;
+
+        // owned lists
+        const { data: ownedLists } = await supabase
             .from("lists")
             .select("*")
-            .order("created_at", { ascending: false });
-        if (data) setLists(data);
+            .eq("user_id", user.id);
+
+        // shared lists
+        const { data: sharedShares } = await supabase
+            .from("list_shares")
+            .select("list_id, lists(*)")
+            .eq("invited_email", user.email?.toLowerCase())
+            .eq("status", "accepted");
+
+        const sharedLists = (sharedShares || [])
+            .map(share => share.lists)
+            .filter(Boolean);
+
+        const allLists = [...(ownedLists || []), ...sharedLists];
+        const uniqueLists = Array.from(new Map(allLists.map(l => [l.id, l])).values());
+
+        setLists(uniqueLists.sort((a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        ));
     };
 
     const navItems = [

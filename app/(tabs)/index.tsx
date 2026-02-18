@@ -58,6 +58,29 @@ export default function Lists() {
         savePinnedIds(next);
     };
 
+    useEffect(() => {
+        if (!user) return;
+
+        fetchLists();
+        fetchInvites();
+
+        // Real-time synchronization
+        const channel = supabase
+            .channel('dashboard-sync')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'lists' }, () => {
+                fetchLists();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'list_shares' }, () => {
+                fetchInvites();
+                fetchLists();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [user]);
+
     useFocusEffect(
         useCallback(() => {
             fetchLists();
