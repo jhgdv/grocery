@@ -62,7 +62,7 @@ export default function InviteUser() {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer re_Vercel_is_waiting_for_your_key`, // PLACEHOLDER
+                        'Authorization': `Bearer ${process.env.EXPO_PUBLIC_RESEND_API_KEY}`,
                     },
                     body: JSON.stringify({
                         from: 'Grocery App <onboarding@resend.dev>',
