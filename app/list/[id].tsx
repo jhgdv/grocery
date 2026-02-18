@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, TouchableOpacity, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, SafeAreaView, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image, Keyboard } from "react-native";
 import { useLocalSearchParams, Stack, useRouter } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -24,6 +24,7 @@ export default function ListDetail() {
     const [uploading, setUploading] = useState(false);
     const [editingItemId, setEditingItemId] = useState<string | null>(null);
     const [editingItemName, setEditingItemName] = useState("");
+    const [editingNotes, setEditingNotes] = useState<{ [key: string]: string }>({});
 
     useEffect(() => {
         if (id) {
@@ -126,7 +127,16 @@ export default function ListDetail() {
     };
 
     const updateItemNotes = async (itemId: string, notes: string) => {
-        await supabase.from("items").update({ notes }).eq("id", itemId);
+        try {
+            setItems(prev => prev.map(i => i.id === itemId ? { ...i, notes } : i));
+            const { error } = await supabase.from("items").update({ notes }).eq("id", itemId);
+            if (error) throw error;
+            Alert.alert("Success", "Notes saved!");
+        } catch (error: any) {
+            console.error("Error updating notes:", error);
+            Alert.alert("Error", "Could not save notes. " + (error.message || ""));
+            fetchItems(); // Revert local state
+        }
     };
 
     const updateItemName = async (itemId: string, newName: string) => {
@@ -163,17 +173,49 @@ export default function ListDetail() {
     const uploadImage = async (itemId: string, asset: ImagePicker.ImagePickerAsset) => {
         try {
             setUploading(true);
-            const base64 = asset.base64;
             const fileName = `${user?.id}/${Date.now()}.jpg`;
-            const { data, error } = await supabase.storage.from("item-images").upload(fileName, decode(base64!), { contentType: "image/jpeg" });
-            if (error) throw error;
-            const { data: { publicUrl } } = supabase.storage.from("item-images").getPublicUrl(fileName);
-            const { error: dbError } = await supabase.from("items").update({ image_url: publicUrl }).eq("id", itemId);
-            if (dbError) throw dbError;
+
+            // For cross-platform compatibility, fetch the URI and convert to blob
+            const response = await fetch(asset.uri);
+            const blob = await response.blob();
+
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from("item-images")
+                .upload(fileName, blob, {
+                    contentType: "image/jpeg",
+                    upsert: true
+                });
+
+            if (uploadError) {
+                console.error("Storage Upload Error:", uploadError);
+                throw uploadError;
+            }
+
+            // Important: Get the public URL AFTER successful upload
+            const { data: urlData } = supabase.storage
+                .from("item-images")
+                .getPublicUrl(fileName);
+
+            const publicUrl = urlData.publicUrl;
+            console.log("Generated Public URL:", publicUrl);
+
+            // Update the database with the new image URL
+            const { error: dbError } = await supabase
+                .from("items")
+                .update({ image_url: publicUrl })
+                .eq("id", itemId);
+
+            if (dbError) {
+                console.error("Database Update Error:", dbError);
+                throw dbError;
+            }
+
+            // Update local state immediately
             setItems((prev) => prev.map((item) => item.id === itemId ? { ...item, image_url: publicUrl } : item));
+            Alert.alert("Success", "Photo saved successfully!");
         } catch (error: any) {
-            console.log("Upload Error:", error);
-            Alert.alert("Upload Failed", "Could not upload image.");
+            console.error("Full Upload Error Details:", error);
+            Alert.alert("Upload Failed", error.message || "Could not save image. Make sure the storage bucket exists.");
         } finally {
             setUploading(false);
         }
@@ -195,63 +237,56 @@ export default function ListDetail() {
         const isChecked = item.checked;
 
         return (
-            <View style={{ marginBottom: 12, marginHorizontal: 16 }}>
+            <View style={{ marginBottom: 16, marginHorizontal: 20 }}>
                 <View
                     style={{
-                        backgroundColor: "rgba(255,255,255,0.85)",
-                        borderRadius: 16,
+                        backgroundColor: "rgba(255,255,255,0.7)",
+                        borderRadius: 28,
                         borderWidth: 1,
-                        borderColor: "rgba(229,231,235,0.6)",
+                        borderColor: isChecked ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.5)",
                         flexDirection: "row",
                         alignItems: "center",
                         opacity: isChecked ? 0.6 : 1,
-                        padding: 12, // Reduced padding for compactness
+                        padding: 16,
+                        shadowColor: "#8E8AFB",
+                        shadowOpacity: isChecked ? 0 : 0.08,
+                        shadowRadius: 15,
+                        shadowOffset: { width: 0, height: 10 },
+                        elevation: isChecked ? 0 : 3,
                     }}
                 >
-                    {/* Reorder Arrows (Only for unchecked items) */}
-                    {!isChecked && (
-                        <View style={{ flexDirection: "column", marginRight: 12, alignItems: "center" }}>
-                            {index > 0 && (
-                                <TouchableOpacity onPress={() => reorderItem("up", item)} style={{ padding: 4 }}>
-                                    <FontAwesome name="chevron-up" size={12} color="#9ca3af" />
-                                </TouchableOpacity>
-                            )}
-                            {index < uncheckedItems.length - 1 && (
-                                <TouchableOpacity onPress={() => reorderItem("down", item)} style={{ padding: 4 }}>
-                                    <FontAwesome name="chevron-down" size={12} color="#9ca3af" />
-                                </TouchableOpacity>
-                            )}
-                        </View>
-                    )}
-
                     <TouchableOpacity
                         onPress={() => toggleCheck(item.id, item.checked)}
                         style={{
-                            height: 24,
-                            width: 24,
+                            height: 32,
+                            width: 32,
                             borderRadius: 12,
-                            borderWidth: 1.5,
-                            borderColor: isChecked ? "#D97D73" : "#d1d5db",
-                            backgroundColor: isChecked ? "#D97D73" : "transparent",
+                            borderWidth: 2,
+                            borderColor: isChecked ? "#8E8AFB" : "#E5E5EA",
+                            backgroundColor: isChecked ? "#8E8AFB" : "rgba(255,255,255,0.5)",
                             alignItems: "center",
                             justifyContent: "center",
-                            marginRight: 12,
+                            marginRight: 16,
+                            shadowColor: isChecked ? "#8E8AFB" : "transparent",
+                            shadowOpacity: 0.3,
+                            shadowRadius: 5,
+                            shadowOffset: { width: 0, height: 2 }
                         }}
-                        hitSlop={8}
+                        hitSlop={12}
                     >
-                        {isChecked && <FontAwesome name="check" size={12} color="white" />}
+                        {isChecked && <FontAwesome name="check" size={14} color="white" />}
                     </TouchableOpacity>
 
                     <View style={{ flex: 1 }}>
                         {editingItemId === item.id ? (
                             <TextInput
                                 style={{
-                                    fontSize: 16,
-                                    fontWeight: "600",
+                                    fontSize: 17,
+                                    fontWeight: "700",
                                     color: "#000000",
                                     paddingVertical: 4,
-                                    borderBottomWidth: 1,
-                                    borderBottomColor: "#D97D73",
+                                    borderBottomWidth: 2,
+                                    borderBottomColor: "#8E8AFB",
                                 }}
                                 value={editingItemName}
                                 onChangeText={setEditingItemName}
@@ -262,72 +297,160 @@ export default function ListDetail() {
                         ) : (
                             <TouchableOpacity
                                 onPress={() => toggleExpand(item.id)}
-                                onLongPress={() => {
-                                    setEditingItemId(item.id);
-                                    setEditingItemName(item.name);
-                                }}
-                                activeOpacity={0.8}
+                                activeOpacity={0.7}
                             >
                                 <Text
-                                    onPress={() => {
-                                        setEditingItemId(item.id);
-                                        setEditingItemName(item.name);
-                                    }}
                                     style={{
-                                        fontSize: 16,
-                                        fontWeight: "600",
-                                        color: isChecked ? "#9ca3af" : "#000000",
+                                        fontSize: 17,
+                                        fontWeight: "700",
+                                        color: isChecked ? "#8E9196" : "#000000",
                                         textDecorationLine: isChecked ? "line-through" : "none",
                                     }}>
                                     {item.name}
                                 </Text>
-                                {(item.notes || item.image_url) && !isChecked && (
+                                {item.notes && !isChecked && (
+                                    <Text
+                                        numberOfLines={1}
+                                        style={{
+                                            fontSize: 13,
+                                            color: "#71717A",
+                                            marginTop: 2,
+                                            fontWeight: "500"
+                                        }}
+                                    >
+                                        {item.notes}
+                                    </Text>
+                                )}
+                                {item.image_url && !isChecked && !item.notes && (
                                     <View style={{ flexDirection: "row", marginTop: 4 }}>
-                                        {item.notes ? <FontAwesome name="sticky-note" size={11} color="#4b5563" style={{ marginRight: 6 }} /> : null}
-                                        {item.image_url ? <FontAwesome name="image" size={11} color="#4b5563" /> : null}
+                                        <FontAwesome name="image" size={12} color="#8E8AFB" />
                                     </View>
                                 )}
                             </TouchableOpacity>
                         )}
                     </View>
 
-                    <TouchableOpacity onPress={() => toggleExpand(item.id)} style={{ padding: 4 }}>
-                        <FontAwesome name={isExpanded ? "chevron-up" : "chevron-down"} size={12} color="#cbd5e1" />
-                    </TouchableOpacity>
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        {!isChecked && editingItemId !== item.id && (
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setEditingItemId(item.id);
+                                    setEditingItemName(item.name);
+                                }}
+                                style={{ padding: 10 }}
+                            >
+                                <FontAwesome name="pencil" size={14} color="#D1D1D6" />
+                            </TouchableOpacity>
+                        )}
+                        <TouchableOpacity onPress={() => toggleExpand(item.id)} style={{ padding: 10 }}>
+                            <FontAwesome name={isExpanded ? "chevron-up" : "chevron-down"} size={14} color="#D1D1D6" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {isExpanded && (
-                    <View style={{ backgroundColor: "rgba(255,255,255,0.7)", marginTop: 4, marginHorizontal: 8, padding: 16, borderBottomLeftRadius: 16, borderBottomRightRadius: 16, borderWidth: 1, borderTopWidth: 0, borderColor: "rgba(229,231,235,0.6)" }}>
-                        <Text style={{ fontSize: 11, fontWeight: "700", color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>Details</Text>
+                    <View style={{
+                        backgroundColor: "rgba(255,255,255,0.6)",
+                        marginTop: -10,
+                        marginHorizontal: 12,
+                        padding: 20,
+                        paddingTop: 28,
+                        borderBottomLeftRadius: 28,
+                        borderBottomRightRadius: 28,
+                        borderWidth: 1,
+                        borderTopWidth: 0,
+                        borderColor: "rgba(255,255,255,0.4)",
+                        zIndex: -1,
+                        shadowColor: "#000",
+                        shadowOpacity: 0.03,
+                        shadowRadius: 10,
+                    }}>
+                        <Text style={{ fontSize: 13, fontWeight: "900", color: "#A1A1AA", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 16 }}>Details</Text>
 
-                        {uploading && <ActivityIndicator color="#D97D73" style={{ marginBottom: 8 }} />}
+                        {uploading && <ActivityIndicator color="#8E8AFB" style={{ marginBottom: 16 }} />}
 
                         {item.image_url && (
                             <Image
                                 source={{ uri: item.image_url }}
-                                style={{ width: "100%", height: 150, borderRadius: 8, marginBottom: 12 }}
+                                style={{ width: "100%", height: 180, borderRadius: 20, marginBottom: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.5)" }}
                                 resizeMode="cover"
                             />
                         )}
 
-                        <TextInput
-                            style={{ backgroundColor: "#f9fafb", padding: 12, borderRadius: 8, color: "#1f2937", fontSize: 14, marginBottom: 12, height: 80, textAlignVertical: "top" }}
-                            multiline
-                            placeholder="Add notes..."
-                            placeholderTextColor="#9ca3af"
-                            defaultValue={item.notes}
-                            onEndEditing={(e) => updateItemNotes(item.id, e.nativeEvent.text)}
-                        />
+                        <View style={{ flexDirection: "row", alignItems: "flex-end", marginBottom: 16 }}>
+                            <TextInput
+                                style={{
+                                    flex: 1,
+                                    backgroundColor: "rgba(255,255,255,0.5)",
+                                    padding: 16,
+                                    borderRadius: 20,
+                                    color: "#000000",
+                                    fontSize: 16,
+                                    fontWeight: "500",
+                                    height: 100,
+                                    textAlignVertical: "top",
+                                    borderWidth: 1,
+                                    borderColor: "rgba(255,255,255,0.3)"
+                                }}
+                                multiline
+                                placeholder="Add notes..."
+                                placeholderTextColor="#A1A1AA"
+                                value={editingNotes[item.id] !== undefined ? editingNotes[item.id] : (item.notes || "")}
+                                onChangeText={(text) => setEditingNotes(prev => ({ ...prev, [item.id]: text }))}
+                                onEndEditing={(e) => updateItemNotes(item.id, e.nativeEvent.text)}
+                                blurOnSubmit={true}
+                                returnKeyType="done"
+                            />
+                            <TouchableOpacity
+                                onPress={() => {
+                                    const currentNote = editingNotes[item.id] !== undefined ? editingNotes[item.id] : (item.notes || "");
+                                    updateItemNotes(item.id, currentNote);
+                                    Keyboard.dismiss();
+                                }}
+                                style={{
+                                    backgroundColor: "#8E8AFB",
+                                    width: 44,
+                                    height: 44,
+                                    borderRadius: 15,
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    marginLeft: 12,
+                                    marginBottom: 4
+                                }}
+                            >
+                                <FontAwesome name="check" size={18} color="white" />
+                            </TouchableOpacity>
+                        </View>
                         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                            <TouchableOpacity onPress={() => pickImage(item.id)} style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#f3f4f6", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 }}>
-                                <FontAwesome name="camera" size={14} color="#1f2937" />
-                                <Text style={{ marginLeft: 8, color: "#1f2937", fontSize: 12, fontWeight: "700" }}>
-                                    {item.image_url ? "Change Photo" : "Add Photo"}
+                            <TouchableOpacity
+                                onPress={() => pickImage(item.id)}
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    backgroundColor: "#f2f1ff",
+                                    paddingHorizontal: 16,
+                                    paddingVertical: 12,
+                                    borderRadius: 16
+                                }}
+                            >
+                                <FontAwesome name="camera" size={16} color="#8E8AFB" />
+                                <Text style={{ marginLeft: 8, color: "#8E8AFB", fontSize: 14, fontWeight: "800" }}>
+                                    {item.image_url ? "Change" : "Add Photo"}
                                 </Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => deleteItem(item.id)} style={{ flexDirection: "row", alignItems: "center", backgroundColor: "#fef2f2", paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 }}>
-                                <FontAwesome name="trash-o" size={14} color="#ef4444" />
-                                <Text style={{ marginLeft: 8, color: "#ef4444", fontSize: 12, fontWeight: "700" }}>Delete</Text>
+                            <TouchableOpacity
+                                onPress={() => deleteItem(item.id)}
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    backgroundColor: "#fff1f1",
+                                    paddingHorizontal: 16,
+                                    paddingVertical: 12,
+                                    borderRadius: 16
+                                }}
+                            >
+                                <FontAwesome name="trash-o" size={16} color="#FF7E73" />
+                                <Text style={{ marginLeft: 8, color: "#FF7E73", fontSize: 14, fontWeight: "800" }}>Delete</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -341,22 +464,75 @@ export default function ListDetail() {
             <Stack.Screen options={{ headerShown: false }} />
 
             {/* Header */}
-            <View style={{ paddingHorizontal: 24, paddingTop: 8, paddingBottom: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: "rgba(229,231,235,0.4)" }}>
-                <TouchableOpacity onPress={() => router.back()} style={{ height: 40, width: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" }} hitSlop={8}>
-                    <FontAwesome name="arrow-left" size={18} color="#1f2937" />
+            <View style={{
+                paddingHorizontal: 24,
+                paddingTop: 8,
+                paddingBottom: 16,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between"
+            }}>
+                <TouchableOpacity
+                    onPress={() => {
+                        if (router.canGoBack()) {
+                            router.back();
+                        } else {
+                            router.replace("/(tabs)");
+                        }
+                    }}
+                    style={{
+                        height: 48,
+                        width: 48,
+                        borderRadius: 24,
+                        backgroundColor: "white",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        shadowColor: "#000",
+                        shadowOpacity: 0.05,
+                        shadowRadius: 10,
+                        elevation: 2
+                    }}
+                    hitSlop={12}
+                >
+                    <FontAwesome name="chevron-left" size={16} color="#000000" />
                 </TouchableOpacity>
-                <TextInput
-                    style={{ flex: 1, fontSize: 20, fontWeight: "700", textAlign: "center", color: "#1f2937", marginHorizontal: 12 }}
-                    value={listName}
-                    onChangeText={updateListName}
-                />
-                <TouchableOpacity onPress={() => setActionModalVisible(true)} style={{ height: 40, width: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" }} hitSlop={8}>
-                    <FontAwesome name="ellipsis-v" size={18} color="#1f2937" />
+
+                <View style={{ flex: 1, marginHorizontal: 16 }}>
+                    <TextInput
+                        style={{
+                            fontSize: 22,
+                            fontWeight: "800",
+                            color: "#000000",
+                            textAlign: "center"
+                        }}
+                        value={listName}
+                        onChangeText={updateListName}
+                        placeholder="List Name"
+                    />
+                </View>
+
+                <TouchableOpacity
+                    onPress={() => setActionModalVisible(true)}
+                    style={{
+                        height: 48,
+                        width: 48,
+                        borderRadius: 24,
+                        backgroundColor: "white",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        shadowColor: "#000",
+                        shadowOpacity: 0.05,
+                        shadowRadius: 10,
+                        elevation: 2
+                    }}
+                    hitSlop={12}
+                >
+                    <FontAwesome name="ellipsis-h" size={18} color="#000000" />
                 </TouchableOpacity>
             </View>
 
             {loading ? (
-                <ActivityIndicator color="#D97D73" style={{ marginTop: 40 }} />
+                <ActivityIndicator color="#8E8AFB" style={{ marginTop: 40 }} />
             ) : (
                 <FlatList
                     data={[...uncheckedItems, ...checkedItems]}
@@ -368,17 +544,47 @@ export default function ListDetail() {
             )}
 
             {/* Add Item Bar */}
-            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0} style={{ position: "absolute", bottom: 24, left: 16, right: 16 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "rgba(255,255,255,0.9)", padding: 8, paddingLeft: 20, borderRadius: 999, shadowColor: "#000", shadowOpacity: 0.08, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 4, borderWidth: 1, borderColor: "rgba(229,231,235,0.8)" }}>
+            <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 0}
+                style={{ position: "absolute", bottom: 40, left: 24, right: 24 }}
+            >
+                <View style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: "white",
+                    padding: 8,
+                    paddingLeft: 24,
+                    borderRadius: 28,
+                    shadowColor: "#8E8AFB",
+                    shadowOpacity: 0.2,
+                    shadowRadius: 20,
+                    shadowOffset: { width: 0, height: 10 },
+                    elevation: 8,
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.8)"
+                }}>
                     <TextInput
-                        style={{ flex: 1, color: "#1f2937", fontWeight: "500", height: 48 }}
-                        placeholder="Add new item..."
-                        placeholderTextColor="#9ca3af"
+                        style={{ flex: 1, color: "#000000", fontWeight: "600", fontSize: 16, height: 52 }}
+                        placeholder="What else do you need?"
+                        placeholderTextColor="#A1A1AA"
                         value={newItem}
                         onChangeText={setNewItem}
                         onSubmitEditing={addItem}
                     />
-                    <TouchableOpacity onPress={addItem} style={{ backgroundColor: "#D97D73", height: 40, width: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", marginLeft: 8 }} activeOpacity={0.8}>
+                    <TouchableOpacity
+                        onPress={addItem}
+                        style={{
+                            backgroundColor: "#8E8AFB",
+                            height: 44,
+                            width: 44,
+                            borderRadius: 22,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginLeft: 12
+                        }}
+                        activeOpacity={0.8}
+                    >
                         <FontAwesome name="plus" size={16} color="white" />
                     </TouchableOpacity>
                 </View>
@@ -391,7 +597,7 @@ export default function ListDetail() {
                 anchorTop={60}
                 anchorRight={16}
                 actions={[
-                    { icon: "share-alt", label: "Share", action: () => router.push({ pathname: "/share/invite" as any, params: { listId: id } }), color: "#1f2937" },
+                    { icon: "share-alt", label: "Invite Others", action: () => router.push({ pathname: "/share/invite" as any, params: { listId: id } }), color: "#8E8AFB" },
                     { icon: "trash-o", label: "Delete List", action: () => router.back(), destructive: true },
                 ]}
             />

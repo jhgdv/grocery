@@ -3,23 +3,7 @@
 @tailwind utilities;
 
 body {
-    background: linear-gradient(-45deg, #dcfce7, #f0fdf4, #ffffff, #dcfce7);
-    background-size: 400% 400%;
-    animation: gradientMove 15s ease infinite;
+    background: linear-gradient(135deg, #f2f1ff 0%, #e9f3ff 50%, #fff1f1 100%);
     background-attachment: fixed;
     min-height: 100vh;
-}
-
-@keyframes gradientMove {
-    0% {
-        background-position: 0% 50%;
-    }
-
-    50% {
-        background-position: 100% 50%;
-    }
-
-    100% {
-        background-position: 0% 50%;
-    }
 }

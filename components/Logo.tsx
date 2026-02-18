@@ -8,29 +8,46 @@ interface LogoProps {
     showText?: boolean;
 }
 
-export const Logo: React.FC<LogoProps> = ({ size = 44, color = "#D97D73", showText = false }) => {
+export const Logo: React.FC<LogoProps> = ({ size = 44, color = "#8E8AFB", showText = false }) => {
     return (
         <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View
                 style={{
                     width: size,
                     height: size,
-                    borderRadius: size * 0.25,
-                    backgroundColor: color, // Solid accent pink background
+                    borderRadius: size * 0.35,
+                    backgroundColor: "white",
                     alignItems: "center",
                     justifyContent: "center",
+                    shadowColor: color,
+                    shadowOpacity: 0.25,
+                    shadowRadius: 15,
+                    shadowOffset: { width: 0, height: 8 },
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.8)",
+                    overflow: "hidden"
                 }}
             >
-                <MaterialCommunityIcons name="basket-outline" size={size * 0.6} color="#dcfce7" />
+                <View style={{
+                    position: "absolute",
+                    bottom: -size * 0.2,
+                    right: -size * 0.2,
+                    width: size * 0.8,
+                    height: size * 0.8,
+                    borderRadius: size * 0.4,
+                    backgroundColor: "#FF7E73",
+                    opacity: 0.15
+                }} />
+                <MaterialCommunityIcons name="shopping" size={size * 0.6} color={color} />
             </View>
             {showText && (
                 <Text
                     style={{
-                        marginLeft: 12,
-                        fontSize: size * 0.5,
+                        marginLeft: 16,
+                        fontSize: size * 0.6,
                         fontWeight: "900",
-                        color: "#1f2937",
-                        letterSpacing: -0.5
+                        color: "#000000",
+                        letterSpacing: -1
                     }}
                 >
                     Grocery

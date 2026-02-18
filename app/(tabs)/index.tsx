@@ -26,8 +26,9 @@ export default function Lists() {
 
     const firstName =
         user?.user_metadata?.full_name?.split(" ")[0] ||
+        user?.user_metadata?.name?.split(" ")[0] ||
         user?.email?.split("@")[0]?.split(/[._-]/)[0]?.replace(/^\w/, (c: string) => c.toUpperCase()) ||
-        "Gat";
+        "Friend";
 
     useEffect(() => {
         loadPinnedIds();
@@ -83,22 +84,31 @@ export default function Lists() {
         }
     };
 
-    const acceptInvite = async (inviteId: string) => {
+    const respondToInvite = async (inviteId: string, status: 'accepted' | 'declined') => {
         try {
-            const { error } = await supabase
-                .from("list_shares")
-                .update({ status: 'accepted' })
-                .eq("id", inviteId);
-
-            if (error) throw error;
+            if (status === 'declined') {
+                const { error } = await supabase
+                    .from("list_shares")
+                    .delete()
+                    .eq("id", inviteId);
+                if (error) throw error;
+            } else {
+                const { error } = await supabase
+                    .from("list_shares")
+                    .update({ status: 'accepted' })
+                    .eq("id", inviteId);
+                if (error) throw error;
+            }
 
             // Refresh
             fetchInvites();
             fetchLists();
 
-            if (Platform.OS === 'web') window.alert("Invitation accepted!");
+            if (status === 'accepted') {
+                if (Platform.OS === 'web') window.alert("Invitation accepted!");
+            }
         } catch (err: any) {
-            Alert.alert("Error", "Could not accept invite.");
+            Alert.alert("Error", `Could not ${status} invite.`);
         }
     };
 
@@ -232,53 +242,62 @@ export default function Lists() {
 
     const renderItem = ({ item }: { item: any }) => {
         const isPinned = pinnedIds.has(item.id);
+
         return (
             <TouchableOpacity
                 style={{
-                    backgroundColor: "rgba(255,255,255,0.7)", // More transparent as requested
-                    padding: 18,
-                    borderRadius: 16,
-                    marginBottom: 12,
+                    backgroundColor: "rgba(255,255,255,0.7)",
+                    padding: 16,
+                    borderRadius: 30,
+                    marginBottom: 16,
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "space-between",
                     borderWidth: 1,
-                    borderColor: isPinned ? "#86efac" : "rgba(229,231,235,0.6)",
-                    shadowColor: "#000",
-                    shadowOpacity: 0.02,
-                    shadowRadius: 5,
-                    shadowOffset: { width: 0, height: 2 },
+                    borderColor: isPinned ? "rgba(142, 138, 251, 0.3)" : "rgba(255,255,255,0.5)",
+                    shadowColor: "#8E8AFB",
+                    shadowOpacity: 0.08,
+                    shadowRadius: 15,
+                    shadowOffset: { width: 0, height: 10 },
+                    elevation: 4,
                 }}
                 onPress={() => router.push(`/list/${item.id}`)}
-                activeOpacity={0.7}
+                activeOpacity={0.8}
             >
                 <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-                    {/* Reorder Arrows */}
-                    <View style={{ marginRight: 12, alignItems: "center" }}>
-                        <TouchableOpacity onPress={() => reorderList("up", item)} style={{ padding: 4 }}>
-                            <FontAwesome name="chevron-up" size={10} color="#9ca3af" />
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={() => reorderList("down", item)} style={{ padding: 4 }}>
-                            <FontAwesome name="chevron-down" size={10} color="#9ca3af" />
-                        </TouchableOpacity>
-                    </View>
-
                     <TouchableOpacity
                         onPress={(e) => { e.stopPropagation(); openIconPicker(item); }}
-                        style={{ height: 44, width: 44, backgroundColor: "#D97D7315", borderRadius: 22, alignItems: "center", justifyContent: "center", marginRight: 16, borderWidth: 1, borderColor: "#D97D7320" }}
+                        style={{
+                            height: 56,
+                            width: 56,
+                            backgroundColor: "white",
+                            borderRadius: 20,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginRight: 16,
+                            shadowColor: "#8E8AFB",
+                            shadowOpacity: 0.1,
+                            shadowRadius: 10,
+                            shadowOffset: { width: 0, height: 5 },
+                            borderWidth: 1,
+                            borderColor: "rgba(255,255,255,0.8)"
+                        }}
                     >
-                        <Text style={{ fontSize: 22 }}>{item.icon || "🛒"}</Text>
+                        <Text style={{ fontSize: 28 }}>{item.icon || "🛒"}</Text>
                     </TouchableOpacity>
                     <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center" }}>
-                            {isPinned && <FontAwesome name="thumb-tack" size={12} color="#22c55e" style={{ marginRight: 6 }} />}
-                            <Text style={{ fontSize: 17, fontWeight: "700", color: "#000000" }} numberOfLines={1}>{item.name}</Text>
+                            {isPinned && <FontAwesome name="thumb-tack" size={12} color="#8E8AFB" style={{ marginRight: 8, transform: [{ rotate: '45deg' }] }} />}
+                            <Text style={{ fontSize: 19, fontWeight: "800", color: "#000000" }} numberOfLines={1}>{item.name}</Text>
                         </View>
-                        <Text style={{ color: "#4b5563", fontSize: 14, fontWeight: "500", marginTop: 2 }}>View items</Text>
+                        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
+                            <Text style={{ color: "#71717A", fontSize: 14, fontWeight: "600" }}>View items</Text>
+                            <FontAwesome name="chevron-right" size={10} color="#D1D1D6" style={{ marginLeft: 6 }} />
+                        </View>
                     </View>
                 </View>
-                <TouchableOpacity onPress={(e) => { e.stopPropagation(); openActions(item); }} style={{ padding: 8 }} hitSlop={8}>
-                    <FontAwesome name="ellipsis-v" size={16} color="#9ca3af" />
+                <TouchableOpacity onPress={(e) => { e.stopPropagation(); openActions(item); }} style={{ padding: 12 }} hitSlop={12}>
+                    <FontAwesome name="ellipsis-h" size={18} color="#A1A1AA" />
                 </TouchableOpacity>
             </TouchableOpacity>
         );
@@ -290,13 +309,13 @@ export default function Lists() {
         <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
             <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 8 }}>
                 {/* Header */}
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 24, marginTop: 8 }}>
-                    <Logo size={44} />
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 32, marginTop: 16 }}>
+                    <Logo size={48} />
                     <View style={{ alignItems: "flex-end" }}>
-                        <Text style={{ color: "#6b7280", fontSize: 11, fontWeight: "700", textTransform: "uppercase", letterSpacing: 1.5, marginBottom: 4 }}>
-                            Welcome back,
+                        <Text style={{ color: "#71717A", fontSize: 13, fontWeight: "700", textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>
+                            Hey,
                         </Text>
-                        <Text style={{ fontSize: 28, fontWeight: "800", color: "#1f2937" }}>
+                        <Text style={{ fontSize: 32, fontWeight: "900", color: "#000000" }}>
                             {firstName}
                         </Text>
                     </View>
@@ -304,56 +323,87 @@ export default function Lists() {
 
                 {/* Pending Invites */}
                 {pendingInvites.length > 0 && (
-                    <View style={{ marginBottom: 24 }}>
-                        <Text style={{ fontSize: 13, fontWeight: "700", color: "#6b7280", letterSpacing: 1, textTransform: "uppercase", marginBottom: 12, marginLeft: 4 }}>
+                    <View style={{ marginBottom: 32 }}>
+                        <Text style={{ fontSize: 13, fontWeight: "800", color: "#A1A1AA", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 16, marginLeft: 8 }}>
                             Pending Invites
                         </Text>
                         {pendingInvites.map((invite) => (
                             <View
                                 key={invite.id}
                                 style={{
-                                    backgroundColor: "white",
-                                    padding: 16,
-                                    borderRadius: 16,
+                                    backgroundColor: "rgba(255, 241, 241, 0.7)",
+                                    padding: 20,
+                                    borderRadius: 28,
                                     flexDirection: "row",
                                     alignItems: "center",
                                     justifyContent: "space-between",
                                     borderWidth: 1,
-                                    borderColor: "#D97D7340",
-                                    marginBottom: 8,
-                                    shadowColor: "#D97D73",
-                                    shadowOffset: { width: 0, height: 4 },
-                                    shadowOpacity: 0.1,
-                                    shadowRadius: 10,
-                                    elevation: 3
+                                    borderColor: "rgba(255, 126, 115, 0.2)",
+                                    marginBottom: 12,
+                                    shadowColor: "#FF7E73",
+                                    shadowOffset: { width: 0, height: 10 },
+                                    shadowOpacity: 0.05,
+                                    shadowRadius: 15,
+                                    elevation: 2
                                 }}
                             >
                                 <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-                                    <View style={{ width: 40, height: 40, backgroundColor: "#D97D7315", borderRadius: 10, alignItems: "center", justifyContent: "center", marginRight: 12 }}>
-                                        <Text style={{ fontSize: 20 }}>{invite.lists?.icon || "🛒"}</Text>
+                                    <View style={{ width: 48, height: 48, backgroundColor: "white", borderRadius: 16, alignItems: "center", justifyContent: "center", marginRight: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 5 }}>
+                                        <Text style={{ fontSize: 24 }}>{invite.lists?.icon || "🛒"}</Text>
                                     </View>
                                     <View style={{ flex: 1 }}>
-                                        <Text style={{ fontWeight: "700", fontSize: 15, color: "#1f2937" }}>{invite.lists?.name}</Text>
-                                        <Text style={{ color: "#6b7280", fontSize: 12 }}>Invited you to collaborate</Text>
+                                        <Text style={{ fontSize: 17, fontWeight: "800", color: "#000000" }}>{invite.lists?.name}</Text>
+                                        <Text style={{ color: "#71717A", fontSize: 14, fontWeight: "500" }}>Invite from someone</Text>
                                     </View>
                                 </View>
-                                <TouchableOpacity
-                                    onPress={() => acceptInvite(invite.id)}
-                                    style={{ backgroundColor: "#D97D73", paddingHorizontal: 16, paddingVertical: 8, borderRadius: 10 }}
-                                >
-                                    <Text style={{ color: "white", fontWeight: "700", fontSize: 13 }}>Accept</Text>
-                                </TouchableOpacity>
+                                <View style={{ flexDirection: "row" }}>
+                                    <TouchableOpacity
+                                        onPress={() => respondToInvite(invite.id, "accepted")}
+                                        style={{ backgroundColor: "#8E8AFB", width: 44, height: 44, borderRadius: 15, alignItems: "center", justifyContent: "center", marginRight: 8 }}
+                                    >
+                                        <FontAwesome name="check" size={18} color="white" />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={() => respondToInvite(invite.id, "declined")}
+                                        style={{ backgroundColor: "white", width: 44, height: 44, borderRadius: 15, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(255, 126, 115, 0.3)" }}
+                                    >
+                                        <FontAwesome name="times" size={18} color="#FF7E73" />
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         ))}
                     </View>
                 )}
 
-                {/* Search */}
-                <View style={{ marginBottom: 20, backgroundColor: "rgba(255,255,255,0.7)", padding: 12, borderRadius: 14, flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "rgba(229,231,235,0.6)" }}>
-                    <FontAwesome name="search" size={14} color="#9ca3af" style={{ marginLeft: 6, marginRight: 10 }} />
-                    <TextInput placeholder="Search lists..." style={{ flex: 1, color: "#1f2937", fontWeight: "500", fontSize: 15 }} placeholderTextColor="#9ca3af" />
+                {/* Search Bar */}
+                <View style={{
+                    backgroundColor: "rgba(255,255,255,0.7)",
+                    borderRadius: 26,
+                    paddingHorizontal: 20,
+                    height: 60,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginBottom: 32,
+                    borderWidth: 1,
+                    borderColor: "rgba(255,255,255,0.8)",
+                    shadowColor: "#8E8AFB",
+                    shadowOpacity: 0.05,
+                    shadowRadius: 15,
+                    shadowOffset: { width: 0, height: 8 },
+                    elevation: 4
+                }}>
+                    <FontAwesome name="search" size={16} color="#A1A1AA" style={{ marginRight: 12 }} />
+                    <TextInput
+                        placeholder="Search your lists..."
+                        placeholderTextColor="#A1A1AA"
+                        style={{ flex: 1, fontSize: 17, fontWeight: "600", color: "#000000" }}
+                    />
                 </View>
 
+                {/* Lists Section */}
+                <Text style={{ fontSize: 13, fontWeight: "800", color: "#A1A1AA", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 16, marginLeft: 8 }}>
+                    My Lists
+                </Text>
                 {loading ? (
                     <ActivityIndicator color="#D97D73" style={{ marginTop: 40 }} />
                 ) : (

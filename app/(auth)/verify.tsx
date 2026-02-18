@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { FontAwesome } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
 
 export default function Verify() {
@@ -35,34 +36,66 @@ export default function Verify() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+        <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                className="flex-1 justify-center px-8"
+                style={{ flex: 1, justifyContent: "center", paddingHorizontal: 32 }}
             >
                 <TouchableOpacity
                     onPress={() => router.back()}
-                    className="absolute top-14 left-8 z-10 p-2 bg-surface-light dark:bg-surface-dark rounded-full shadow-sm"
+                    style={{
+                        position: "absolute",
+                        top: 60,
+                        left: 24,
+                        zIndex: 10,
+                        height: 48,
+                        width: 48,
+                        borderRadius: 24,
+                        backgroundColor: "white",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        shadowColor: "#000",
+                        shadowOpacity: 0.05,
+                        shadowRadius: 10,
+                        elevation: 2
+                    }}
                 >
-                    <Text className="text-primary dark:text-white">←</Text>
+                    <FontAwesome name="chevron-left" size={16} color="#000000" />
                 </TouchableOpacity>
 
-                <View className="items-center mb-10">
-                    <Text className="text-3xl font-bold text-primary dark:text-white mb-2">
-                        Check your email
+                <View style={{ alignItems: "center", marginBottom: 48 }}>
+                    <Text style={{ fontSize: 36, fontWeight: "900", color: "#000000", marginBottom: 12, textAlign: "center" }}>
+                        Confirm it's you
                     </Text>
-                    <Text className="text-text-secondary dark:text-gray-400 text-center text-base">
-                        We sent a code to <Text className="font-bold text-primary dark:text-white">{email}</Text>
+                    <Text style={{ color: "#71717A", textAlign: "center", fontSize: 17, fontWeight: "500", lineHeight: 24 }}>
+                        We've sent a code to{"\n"}
+                        <Text style={{ fontWeight: "800", color: "#8E8AFB" }}>{email}</Text>
                     </Text>
                 </View>
 
-                <View className="space-y-6">
-                    <View>
-                        <Text className="text-primary dark:text-gray-300 mb-2 font-semibold ml-1 text-center">Enter Code</Text>
+                <View>
+                    <View style={{ marginBottom: 32 }}>
                         <TextInput
-                            className="w-full bg-surface-light dark:bg-surface-dark px-6 py-5 rounded-2xl border border-accent dark:border-accent text-primary dark:text-white text-3xl font-bold text-center tracking-widest shadow-sm"
+                            style={{
+                                width: "100%",
+                                backgroundColor: "white",
+                                paddingVertical: 24,
+                                borderRadius: 28,
+                                textAlign: "center",
+                                fontSize: 36,
+                                fontWeight: "800",
+                                color: "#000000",
+                                letterSpacing: 8,
+                                shadowColor: "#8E8AFB",
+                                shadowOpacity: 0.1,
+                                shadowRadius: 20,
+                                shadowOffset: { width: 0, height: 10 },
+                                elevation: 5,
+                                borderWidth: 1,
+                                borderColor: "rgba(255,255,255,0.8)"
+                            }}
                             placeholder="000000"
-                            placeholderTextColor="#cbd5e1"
+                            placeholderTextColor="#E5E5EA"
                             value={code}
                             onChangeText={setCode}
                             keyboardType="number-pad"
@@ -72,7 +105,18 @@ export default function Verify() {
                     </View>
 
                     <TouchableOpacity
-                        className="w-full bg-accent py-4 rounded-2xl items-center mt-4 shadow-lg shadow-accent/40"
+                        style={{
+                            width: "100%",
+                            backgroundColor: "#8E8AFB",
+                            paddingVertical: 20,
+                            borderRadius: 24,
+                            alignItems: "center",
+                            shadowColor: "#8E8AFB",
+                            shadowOpacity: 0.3,
+                            shadowRadius: 15,
+                            shadowOffset: { width: 0, height: 8 },
+                            opacity: loading ? 0.7 : 1
+                        }}
                         onPress={handleVerify}
                         disabled={loading}
                         activeOpacity={0.8}
@@ -80,16 +124,16 @@ export default function Verify() {
                         {loading ? (
                             <ActivityIndicator color="white" />
                         ) : (
-                            <Text className="text-white font-bold text-lg tracking-wide">Verify Code</Text>
+                            <Text style={{ color: "white", fontWeight: "800", fontSize: 18, letterSpacing: 1 }}>Verify Account</Text>
                         )}
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         onPress={() => router.back()}
-                        className="mt-4"
+                        style={{ marginTop: 24 }}
                     >
-                        <Text className="text-center text-primary dark:text-gray-400 font-medium">
-                            Change email or resend
+                        <Text style={{ textAlign: "center", color: "#71717A", fontWeight: "700" }}>
+                            Wrong email? <Text style={{ color: "#8E8AFB" }}>Try again</Text>
                         </Text>
                     </TouchableOpacity>
                 </View>

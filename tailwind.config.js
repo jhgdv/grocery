@@ -5,11 +5,12 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: "#1f2937",       // Dark gray for text (readable, neutral)
-        accent: "#D97D73",        // Old Rose
-        background: "#f0fdf4",    // Very light green
-        surface: "#ffffff",       // White cards
-        muted: "#6b7280",         // Gray-500 for secondary text
+        primary: "#000000",       // Black for highest readability
+        accent: "#8E8AFB",        // Soft Purple from image
+        coral: "#FF7E73",         // Coral from image
+        background: "#F2F1FF",    // Soft Lavender
+        surface: "rgba(255, 255, 255, 0.75)", // Glass effect base
+        muted: "#71717A",         // Zinc-500
       },
     },
   },

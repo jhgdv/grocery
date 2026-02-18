@@ -67,43 +67,86 @@ export default function Login() {
     };
 
     return (
-        <SafeAreaView className="flex-1 bg-background-light dark:bg-background-dark">
+        <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                className="flex-1 justify-center px-8"
+                style={{ flex: 1, justifyContent: "center", paddingHorizontal: 32 }}
             >
                 {/* Logo & Branding */}
-                <View className="items-center mb-10">
-                    <Logo size={80} />
-                    <View style={{ height: 16 }} />
-                    <Text
-                        style={{ color: "#D97D73" }}
-                        className="text-4xl font-bold mb-2 tracking-tight"
-                    >
+                <View style={{ alignItems: "center", marginBottom: 48 }}>
+                    <View style={{
+                        height: 100,
+                        width: 100,
+                        backgroundColor: "white",
+                        borderRadius: 35,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        shadowColor: "#8E8AFB",
+                        shadowOpacity: 0.2,
+                        shadowRadius: 20,
+                        shadowOffset: { width: 0, height: 10 },
+                        marginBottom: 24
+                    }}>
+                        <Logo size={60} />
+                    </View>
+
+                    <Text style={{
+                        fontSize: 42,
+                        fontWeight: "900",
+                        color: "#000000",
+                        letterSpacing: -1,
+                        marginBottom: 12
+                    }}>
                         Grocery
                     </Text>
-                    <Text className="text-text-secondary dark:text-gray-400 text-center font-medium text-base">
-                        Create, share & never forget a thing.
+                    <Text style={{
+                        color: "#71717A",
+                        textAlign: "center",
+                        fontSize: 17,
+                        fontWeight: "500",
+                        lineHeight: 24,
+                        paddingHorizontal: 20
+                    }}>
+                        Stay organized & share lists with your favorite people.
                     </Text>
                 </View>
 
                 {/* Form */}
                 <View>
-                    {/* Inline error */}
                     {errorMessage ? (
-                        <View style={{ backgroundColor: "#fef2f2", borderWidth: 1, borderColor: "#fecaca", borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 16 }}>
-                            <Text style={{ color: "#dc2626", fontSize: 14, fontWeight: "500", textAlign: "center" }}>
+                        <View style={{
+                            backgroundColor: "#FFF1F1",
+                            borderWidth: 1,
+                            borderColor: "#FF7E7320",
+                            borderRadius: 20,
+                            padding: 16,
+                            marginBottom: 24
+                        }}>
+                            <Text style={{ color: "#FF7E73", fontSize: 14, fontWeight: "700", textAlign: "center" }}>
                                 {errorMessage}
                             </Text>
                         </View>
                     ) : null}
 
-                    <View style={{ marginBottom: 16 }}>
-                        <Text className="text-primary dark:text-gray-300 mb-2 font-semibold ml-1">First Name</Text>
+                    <View style={{ marginBottom: 20 }}>
+                        <Text style={{ color: "#000000", fontSize: 14, fontWeight: "800", marginBottom: 10, marginLeft: 6, textTransform: "uppercase", letterSpacing: 1 }}>Name</Text>
                         <TextInput
-                            style={{ width: "100%", backgroundColor: "#f8fdf9", paddingHorizontal: 20, paddingVertical: 16, borderRadius: 16, borderWidth: 1, borderColor: "#e5e7eb", fontSize: 16, color: "#1c2321" }}
-                            placeholder="Name"
-                            placeholderTextColor="#9ca3af"
+                            style={{
+                                width: "100%",
+                                backgroundColor: "white",
+                                paddingHorizontal: 24,
+                                paddingVertical: 18,
+                                borderRadius: 24,
+                                fontSize: 17,
+                                fontWeight: "600",
+                                color: "#000000",
+                                shadowColor: "#000",
+                                shadowOpacity: 0.05,
+                                shadowRadius: 10,
+                                elevation: 2
+                            }}
+                            placeholder="Your Name"
+                            placeholderTextColor="#A1A1AA"
                             value={fullName}
                             onChangeText={(text) => {
                                 setFullName(text);
@@ -113,12 +156,25 @@ export default function Login() {
                         />
                     </View>
 
-                    <View style={{ marginBottom: 16 }}>
-                        <Text className="text-primary dark:text-gray-300 mb-2 font-semibold ml-1">Email Address</Text>
+                    <View style={{ marginBottom: 32 }}>
+                        <Text style={{ color: "#000000", fontSize: 14, fontWeight: "800", marginBottom: 10, marginLeft: 6, textTransform: "uppercase", letterSpacing: 1 }}>Email</Text>
                         <TextInput
-                            style={{ width: "100%", backgroundColor: "#f8fdf9", paddingHorizontal: 20, paddingVertical: 16, borderRadius: 16, borderWidth: 1, borderColor: "#e5e7eb", fontSize: 16, color: "#1c2321" }}
-                            placeholder="email@example.com"
-                            placeholderTextColor="#9ca3af"
+                            style={{
+                                width: "100%",
+                                backgroundColor: "white",
+                                paddingHorizontal: 24,
+                                paddingVertical: 18,
+                                borderRadius: 24,
+                                fontSize: 17,
+                                fontWeight: "600",
+                                color: "#000000",
+                                shadowColor: "#000",
+                                shadowOpacity: 0.05,
+                                shadowRadius: 10,
+                                elevation: 2
+                            }}
+                            placeholder="you@example.com"
+                            placeholderTextColor="#A1A1AA"
                             value={email}
                             onChangeText={(text) => {
                                 setEmail(text);
@@ -129,31 +185,32 @@ export default function Login() {
                         />
                     </View>
 
-                    {/* Pressable */}
                     <Pressable
                         onPress={handleSendCode}
                         disabled={loading}
                         style={({ pressed }) => ({
                             width: "100%",
-                            backgroundColor: pressed ? "#c4685f" : "#D97D73",
-                            paddingVertical: 16,
-                            borderRadius: 16,
-                            alignItems: "center" as const,
-                            marginTop: 8,
-                            opacity: loading ? 0.6 : 1,
-                            cursor: "pointer" as any,
+                            backgroundColor: pressed ? "#7C77E6" : "#8E8AFB",
+                            paddingVertical: 20,
+                            borderRadius: 24,
+                            alignItems: "center",
+                            shadowColor: "#8E8AFB",
+                            shadowOpacity: 0.3,
+                            shadowRadius: 15,
+                            shadowOffset: { width: 0, height: 8 },
+                            opacity: loading ? 0.7 : 1,
                         })}
                     >
                         {loading ? (
                             <ActivityIndicator color="white" />
                         ) : (
-                            <Text style={{ color: "white", fontWeight: "700", fontSize: 18, letterSpacing: 0.5 }}>
-                                Continue with Email
+                            <Text style={{ color: "white", fontWeight: "800", fontSize: 18, letterSpacing: 1 }}>
+                                Continue
                             </Text>
                         )}
                     </Pressable>
 
-                    <Text style={{ textAlign: "center", color: "#9ca3af", fontSize: 14, marginTop: 16 }}>
+                    <Text style={{ textAlign: "center", color: "#A1A1AA", fontSize: 14, marginTop: 24, fontWeight: "600" }}>
                         We'll send you a secure 6-digit code.
                     </Text>
                 </View>
