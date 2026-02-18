@@ -5,16 +5,30 @@ import { FontAwesome } from "@expo/vector-icons";
 import { Logo } from "./Logo";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const Sidebar = () => {
     const router = useRouter();
     const pathname = usePathname();
     const { user, signOut } = useAuth();
     const [lists, setLists] = React.useState<any[]>([]);
+    const [pinnedIds, setPinnedIds] = React.useState<Set<string>>(new Set());
+
+    React.useEffect(() => {
+        loadPinnedIds();
+    }, []);
+
+    const loadPinnedIds = async () => {
+        try {
+            const stored = await AsyncStorage.getItem("pinned_lists");
+            if (stored) setPinnedIds(new Set(JSON.parse(stored)));
+        } catch (e) { /* ignore */ }
+    };
 
     React.useEffect(() => {
         if (!user) return;
 
+        loadPinnedIds(); // Refresh pins too
         fetchLists();
 
         // Realtime subscription for syncing lists across components
@@ -31,34 +45,54 @@ export const Sidebar = () => {
         return () => {
             supabase.removeChannel(listsChannel);
         };
-    }, [user]);
+    }, [user, pathname]); // Re-fetch on navigation to ensure sync
 
     const fetchLists = async () => {
         if (!user) return;
 
-        // owned lists
-        const { data: ownedLists } = await supabase
-            .from("lists")
-            .select("*")
-            .eq("user_id", user.id);
+        try {
+            // Fetch both owned and shared lists simultaneously for speed
+            const [ownedRes, sharedRes] = await Promise.all([
+                supabase.from("lists").select("*").eq("user_id", user.id),
+                supabase.from("list_shares").select("list_id, lists(*)").eq("invited_email", user.email?.toLowerCase()).eq("status", "accepted")
+            ]);
 
-        // shared lists
-        const { data: sharedShares } = await supabase
-            .from("list_shares")
-            .select("list_id, lists(*)")
-            .eq("invited_email", user.email?.toLowerCase())
-            .eq("status", "accepted");
+            if (ownedRes.error) throw ownedRes.error;
 
-        const sharedLists = (sharedShares || [])
-            .map(share => share.lists)
-            .filter(Boolean);
+            const ownedLists = ownedRes.data || [];
+            const sharedLists = (sharedRes.data || [])
+                .map((share: any) => share.lists)
+                .filter(Boolean);
 
-        const allLists = [...(ownedLists || []), ...sharedLists];
-        const uniqueLists = Array.from(new Map(allLists.map(l => [l.id, l])).values());
+            const allLists = [...ownedLists, ...sharedLists];
 
-        setLists(uniqueLists.sort((a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        ));
+            // Deduplicate lists by ID
+            const uniqueLists = Array.from(new Map(allLists.map(l => [l.id, l])).values());
+
+            setLists(uniqueLists.sort((a, b) => {
+                const aPinned = pinnedIds.has(a.id);
+                const bPinned = pinnedIds.has(b.id);
+                if (aPinned && !bPinned) return -1;
+                if (!aPinned && bPinned) return 1;
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            }));
+        } catch (error) {
+            console.error("Sidebar fetch error:", error);
+        }
+    };
+
+    const renderListIcon = (icon: string) => {
+        if (!icon) return <Text style={{ fontSize: 18, marginRight: 10 }}>🛒</Text>;
+
+        // Check if it's a FontAwesome icon name or an emoji
+        // Emojis are usually multi-byte or non-alphanumeric strings
+        const isEmoji = /\p{Emoji}/u.test(icon) || icon.length <= 2;
+
+        if (isEmoji) {
+            return <Text style={{ fontSize: 18, marginRight: 10 }}>{icon}</Text>;
+        }
+
+        return <FontAwesome name={icon as any} size={18} color="#71717A" style={{ marginRight: 10, width: 22, textAlign: 'center' }} />;
     };
 
     const navItems = [
@@ -162,7 +196,7 @@ export const Sidebar = () => {
                                 marginBottom: 2
                             }}
                         >
-                            <Text style={{ fontSize: 18, marginRight: 10 }}>{list.icon || "🛒"}</Text>
+                            {renderListIcon(list.icon)}
                             <Text style={{
                                 flex: 1,
                                 fontSize: 15,

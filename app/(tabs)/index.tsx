@@ -263,6 +263,14 @@ export default function Lists() {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
+    const renderListIcon = (icon: string, size: number = 28) => {
+        if (!icon) return <Text style={{ fontSize: size }}>🛒</Text>;
+        const isEmoji = /\p{Emoji}/u.test(icon) || icon.length <= 2;
+        if (isEmoji) return <Text style={{ fontSize: size }}>{icon}</Text>;
+        // @ts-ignore
+        return <FontAwesome name={icon} size={size * 0.8} color="#FF7E73" />;
+    };
+
     const renderItem = ({ item }: { item: any }) => {
         const isPinned = pinnedIds.has(item.id);
 
@@ -298,7 +306,7 @@ export default function Lists() {
                             alignItems: "center",
                             justifyContent: "center",
                             marginRight: 16,
-                            shadowColor: "#8E8AFB",
+                            shadowColor: "#FF7E73",
                             shadowOpacity: 0.1,
                             shadowRadius: 10,
                             shadowOffset: { width: 0, height: 5 },
@@ -306,7 +314,7 @@ export default function Lists() {
                             borderColor: "rgba(255,255,255,0.8)"
                         }}
                     >
-                        <Text style={{ fontSize: 28 }}>{item.icon || "🛒"}</Text>
+                        {renderListIcon(item.icon)}
                     </TouchableOpacity>
                     <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: "row", alignItems: "center" }}>

@@ -8,18 +8,18 @@ type IconCategory = {
     icons: (keyof typeof FontAwesome.glyphMap)[];
 };
 
-const CATEGORIES: IconCategory[] = [
+const CATEGORIES = [
     {
         name: "General",
-        icons: ["shopping-basket", "shopping-cart", "home", "star", "heart", "gift", "list-ul", "check-square-o"]
+        icons: ["🛒", "🛍️", "🏪", "🏷️", "💳", "🎁", "🎉", "🎈"]
     },
     {
-        name: "Stores & Brands",
-        icons: ["building", "tag", "credit-card", "truck", "dropbox", "cutlery", "coffee", "beer", "glass"]
+        name: "Food",
+        icons: ["🥦", "🥩", "🍞", "🥛", "🧀", "🥚", "🍕", "🍔", "🥗", "🥘", "🥐", "🍷", "🍺"]
     },
     {
-        name: "Food & Items",
-        icons: ["lemon-o", "apple", "leaf", "birthday-cake", "flask", "medkit", "paw", "gamepad"]
+        name: "Home",
+        icons: ["🛋️", "🪑", "🛏️", "🚿", "🛠️", "🪴", "📦", "🚚", "💻", "📱", "🎮", "🎧"]
     }
 ];
 
@@ -43,50 +43,56 @@ export function IconPickerModal({ visible, onClose, onSelect, selectedIcon }: Ic
             onRequestClose={onClose}
         >
             <TouchableWithoutFeedback onPress={onClose}>
-                <View className="flex-1 bg-black/50 justify-end">
+                <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
                     <TouchableWithoutFeedback>
-                        <View className="bg-white dark:bg-surface-dark rounded-t-3xl h-[70%] overflow-hidden">
+                        <View style={{
+                            backgroundColor: "white",
+                            borderTopLeftRadius: 32,
+                            borderTopRightRadius: 32,
+                            height: "70%",
+                            overflow: "hidden"
+                        }}>
                             {/* Header */}
-                            <View className="items-center py-4 border-b border-gray-100 dark:border-gray-800">
-                                <View className="w-12 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full mb-3" />
-                                <Text className="text-primary dark:text-white font-bold text-lg">
+                            <View style={{ alignItems: "center", borderBottomWidth: 1, borderBottomColor: "#f3f4f6", paddingVertical: 16 }}>
+                                <View style={{ height: 6, width: 48, backgroundColor: "#e5e7eb", borderRadius: 3, marginBottom: 12 }} />
+                                <Text style={{ color: "#000", fontWeight: "800", fontSize: 18 }}>
                                     Choose Icon
                                 </Text>
                             </View>
 
                             {/* Categories */}
-                            <ScrollView
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                className="max-h-14 border-b border-gray-100 dark:border-gray-800"
-                                contentContainerStyle={{ paddingHorizontal: 16, alignItems: 'center' }}
-                            >
-                                {CATEGORIES.map((cat) => (
-                                    <TouchableOpacity
-                                        key={cat.name}
-                                        onPress={() => setActiveCategory(cat.name)}
-                                        className={clsx(
-                                            "mr-6 py-3 border-b-2",
-                                            activeCategory === cat.name
-                                                ? "border-accent"
-                                                : "border-transparent"
-                                        )}
-                                    >
-                                        <Text className={clsx(
-                                            "font-bold text-sm",
-                                            activeCategory === cat.name
-                                                ? "text-accent"
-                                                : "text-gray-400"
-                                        )}>
-                                            {cat.name}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
+                            <View style={{ height: 56, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" }}>
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={{ paddingHorizontal: 16, alignItems: 'center' }}
+                                >
+                                    {CATEGORIES.map((cat) => (
+                                        <TouchableOpacity
+                                            key={cat.name}
+                                            onPress={() => setActiveCategory(cat.name)}
+                                            style={{
+                                                marginRight: 24,
+                                                paddingVertical: 12,
+                                                borderBottomWidth: 2,
+                                                borderBottomColor: activeCategory === cat.name ? "#FF7E73" : "transparent"
+                                            }}
+                                        >
+                                            <Text style={{
+                                                fontWeight: "700",
+                                                fontSize: 14,
+                                                color: activeCategory === cat.name ? "#FF7E73" : "#9ca3af"
+                                            }}>
+                                                {cat.name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </View>
 
                             {/* Icons Grid */}
                             <ScrollView contentContainerStyle={{ padding: 20 }}>
-                                <View className="flex-row flex-wrap justify-between">
+                                <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start" }}>
                                     {CATEGORIES.find(c => c.name === activeCategory)?.icons.map((icon, index) => (
                                         <TouchableOpacity
                                             key={index}
@@ -94,18 +100,19 @@ export function IconPickerModal({ visible, onClose, onSelect, selectedIcon }: Ic
                                                 onSelect(icon);
                                                 onClose();
                                             }}
-                                            className={clsx(
-                                                "w-[22%] aspect-square items-center justify-center rounded-2xl mb-4",
-                                                selectedIcon === icon
-                                                    ? "bg-primary shadow-lg shadow-primary/30"
-                                                    : "bg-gray-50 dark:bg-gray-800"
-                                            )}
+                                            style={{
+                                                width: "20%",
+                                                aspectRatio: 1,
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                borderRadius: 16,
+                                                marginBottom: 12,
+                                                backgroundColor: selectedIcon === icon ? "rgba(255, 126, 115, 0.1)" : "transparent",
+                                                borderWidth: 1,
+                                                borderColor: selectedIcon === icon ? "#FF7E73" : "transparent"
+                                            }}
                                         >
-                                            <FontAwesome
-                                                name={icon}
-                                                size={24}
-                                                color={selectedIcon === icon ? "white" : "#94a3b8"}
-                                            />
+                                            <Text style={{ fontSize: 32 }}>{icon}</Text>
                                         </TouchableOpacity>
                                     ))}
                                 </View>
