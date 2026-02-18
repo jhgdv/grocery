@@ -73,33 +73,11 @@ export default function Login() {
                 style={{ flex: 1, justifyContent: "center", paddingHorizontal: 32 }}
             >
                 {/* Logo & Branding */}
-                <View style={{ alignItems: "center", marginBottom: 48 }}>
-                    <View style={{
-                        height: 100,
-                        width: 100,
-                        backgroundColor: "white",
-                        borderRadius: 35,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        shadowColor: "#8E8AFB",
-                        shadowOpacity: 0.2,
-                        shadowRadius: 20,
-                        shadowOffset: { width: 0, height: 10 },
-                        marginBottom: 24
-                    }}>
-                        <Logo size={60} showText={false} />
-                    </View>
+                <View style={{ alignItems: "center", marginBottom: 64 }}>
+                    <Logo size={80} />
 
                     <Text style={{
-                        fontSize: 42,
-                        fontWeight: "900",
-                        color: "#000000",
-                        letterSpacing: -1,
-                        marginBottom: 12
-                    }}>
-                        Grocery
-                    </Text>
-                    <Text style={{
+                        marginTop: 24,
                         color: "#71717A",
                         textAlign: "center",
                         fontSize: 17,

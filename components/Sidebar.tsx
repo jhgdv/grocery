@@ -82,17 +82,33 @@ export const Sidebar = () => {
                 })}
             </View>
 
-            <Text style={{
-                fontSize: 12,
-                fontWeight: "800",
-                color: "#A1A1AA",
-                textTransform: "uppercase",
-                letterSpacing: 1.5,
+            <View style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
                 marginBottom: 16,
                 paddingHorizontal: 16
             }}>
-                My Lists
-            </Text>
+                <Text style={{
+                    fontSize: 12,
+                    fontWeight: "800",
+                    color: "#A1A1AA",
+                    textTransform: "uppercase",
+                    letterSpacing: 1.5,
+                }}>
+                    My Lists
+                </Text>
+                <TouchableOpacity
+                    onPress={() => router.push("/list/create")}
+                    style={{
+                        padding: 6,
+                        backgroundColor: "#FF7E7315",
+                        borderRadius: 8
+                    }}
+                >
+                    <FontAwesome name="plus" size={12} color="#FF7E73" />
+                </TouchableOpacity>
+            </View>
 
             <ScrollView style={{ flex: 1 }}>
                 {lists.map((list) => {
