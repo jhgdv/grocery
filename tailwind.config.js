@@ -5,12 +5,15 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: "#000000",       // Black for highest readability
-        accent: "#8E8AFB",        // Soft Purple from image
-        coral: "#FF7E73",         // Coral from image
-        background: "#F2F1FF",    // Soft Lavender
-        surface: "rgba(255, 255, 255, 0.75)", // Glass effect base
-        muted: "#71717A",         // Zinc-500
+        primary: "#6BA0D8",       // Calm light blue
+        accent: "#B39DDB",        // Soft lavender/purple
+        background: "#F4F6FC",   // Light blue-white
+        surface: "#FFFFFF",
+        muted: "#5C6E82",
+        border: "#DDE6F4",
+      },
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
       },
     },
   },

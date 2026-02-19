@@ -7,6 +7,20 @@ import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const COLORS = {
+    bg: "#F4F6FC",
+    white: "#FFFFFF",
+    primary: "#6BA0D8",
+    primarySoft: "rgba(107, 160, 216, 0.1)",
+    accent: "#B39DDB",
+    accentSoft: "rgba(179, 157, 219, 0.12)",
+    text: "#1E293B",
+    textSecondary: "#5C6E82",
+    textTertiary: "#94A3B8",
+    border: "#DDE6F4",
+    borderLight: "#EEF3FA",
+};
+
 export const Sidebar = () => {
     const router = useRouter();
     const pathname = usePathname();
@@ -28,10 +42,9 @@ export const Sidebar = () => {
     React.useEffect(() => {
         if (!user) return;
 
-        loadPinnedIds(); // Refresh pins too
+        loadPinnedIds();
         fetchLists();
 
-        // Realtime subscription for syncing lists across components
         const listsChannel = supabase
             .channel('sidebar-lists')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'lists' }, () => {
@@ -45,13 +58,12 @@ export const Sidebar = () => {
         return () => {
             supabase.removeChannel(listsChannel);
         };
-    }, [user, pathname]); // Re-fetch on navigation to ensure sync
+    }, [user, pathname]);
 
     const fetchLists = async () => {
         if (!user) return;
 
         try {
-            // Fetch both owned and shared lists simultaneously for speed
             const [ownedRes, sharedRes] = await Promise.all([
                 supabase.from("lists").select("*").eq("user_id", user.id),
                 supabase.from("list_shares").select("list_id, lists(*)").eq("invited_email", user.email?.toLowerCase()).eq("status", "accepted")
@@ -65,8 +77,6 @@ export const Sidebar = () => {
                 .filter(Boolean);
 
             const allLists = [...ownedLists, ...sharedLists];
-
-            // Deduplicate lists by ID
             const uniqueLists = Array.from(new Map(allLists.map(l => [l.id, l])).values());
 
             setLists(uniqueLists.sort((a, b) => {
@@ -82,17 +92,9 @@ export const Sidebar = () => {
     };
 
     const renderListIcon = (icon: string) => {
-        if (!icon) return <Text style={{ fontSize: 18, marginRight: 10 }}>🛒</Text>;
-
-        // Check if it's a FontAwesome icon name or an emoji
-        // Emojis are usually multi-byte or non-alphanumeric strings
-        const isEmoji = /\p{Emoji}/u.test(icon) || icon.length <= 2;
-
-        if (isEmoji) {
-            return <Text style={{ fontSize: 18, marginRight: 10 }}>{icon}</Text>;
-        }
-
-        return <FontAwesome name={icon as any} size={18} color="#71717A" style={{ marginRight: 10, width: 22, textAlign: 'center' }} />;
+        const isEmoji = icon && (/\p{Emoji_Presentation}/u.test(icon) || (icon.length <= 2 && /\p{Emoji}/u.test(icon)));
+        const iconName: any = (!icon || isEmoji) ? "shopping-basket" : icon;
+        return <FontAwesome name={iconName} size={14} color={COLORS.primary} style={{ marginRight: 10, width: 18, textAlign: 'center' }} />;
     };
 
     const navItems = [
@@ -104,20 +106,21 @@ export const Sidebar = () => {
 
     return (
         <View style={{
-            width: 280,
+            width: 260,
             height: "100%",
-            backgroundColor: "rgba(255, 255, 255, 0.1)",
+            backgroundColor: COLORS.white,
             borderRightWidth: 1,
-            borderRightColor: "rgba(255, 255, 255, 0.2)",
+            borderRightColor: COLORS.border,
             padding: 24,
             display: "flex",
             flexDirection: "column",
-            // @ts-ignore
-            backdropFilter: "blur(40px) saturate(120%)",
-            WebkitBackdropFilter: "blur(40px) saturate(120%)"
+            shadowColor: "#6BA0D8",
+            shadowOffset: { width: 2, height: 0 },
+            shadowOpacity: 0.05,
+            shadowRadius: 12,
         }}>
-            <View style={{ marginBottom: 40 }}>
-                <Logo size={36} />
+            <View style={{ marginBottom: 40, paddingLeft: 4 }}>
+                <Logo size={26} />
             </View>
 
             <View style={{ marginBottom: 32 }}>
@@ -132,17 +135,17 @@ export const Sidebar = () => {
                                 alignItems: "center",
                                 paddingVertical: 12,
                                 paddingHorizontal: 16,
-                                borderRadius: 12,
-                                backgroundColor: isActive ? "#FF7E7315" : "transparent",
-                                marginBottom: 4
+                                borderRadius: 10,
+                                backgroundColor: isActive ? COLORS.primarySoft : "transparent",
+                                marginBottom: 6,
                             }}
                         >
-                            <FontAwesome name={item.icon as any} size={18} color={isActive ? "#FF7E73" : "#71717A"} style={{ width: 24 }} />
+                            <FontAwesome name={item.icon as any} size={16} color={isActive ? COLORS.primary : COLORS.textSecondary} style={{ width: 24, textAlign: 'center' }} />
                             <Text style={{
                                 marginLeft: 8,
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: isActive ? "700" : "500",
-                                color: isActive ? "#FF7E73" : "#1f2937"
+                                color: isActive ? COLORS.primary : COLORS.textSecondary,
                             }}>
                                 {item.name}
                             </Text>
@@ -156,30 +159,20 @@ export const Sidebar = () => {
                 alignItems: "center",
                 justifyContent: "space-between",
                 marginBottom: 16,
-                paddingHorizontal: 16
+                paddingHorizontal: 12
             }}>
                 <Text style={{
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: "800",
-                    color: "#A1A1AA",
+                    color: COLORS.text,
                     textTransform: "uppercase",
-                    letterSpacing: 1.5,
+                    letterSpacing: 0.5,
                 }}>
                     My Lists
                 </Text>
-                <TouchableOpacity
-                    onPress={() => router.push("/list/create")}
-                    style={{
-                        padding: 6,
-                        backgroundColor: "#FF7E7315",
-                        borderRadius: 8
-                    }}
-                >
-                    <FontAwesome name="plus" size={12} color="#FF7E73" />
-                </TouchableOpacity>
             </View>
 
-            <ScrollView style={{ flex: 1 }}>
+            <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
                 {lists.map((list) => {
                     const isActive = pathname.includes(`/list/${list.id}`);
                     return (
@@ -191,17 +184,17 @@ export const Sidebar = () => {
                                 alignItems: "center",
                                 paddingVertical: 10,
                                 paddingHorizontal: 16,
-                                borderRadius: 12,
-                                backgroundColor: isActive ? "#FF7E7315" : "transparent",
-                                marginBottom: 2
+                                borderRadius: 8,
+                                backgroundColor: isActive ? COLORS.primarySoft : "transparent",
+                                marginBottom: 4,
                             }}
                         >
                             {renderListIcon(list.icon)}
                             <Text style={{
                                 flex: 1,
-                                fontSize: 15,
+                                fontSize: 14,
                                 fontWeight: isActive ? "700" : "500",
-                                color: isActive ? "#000000" : "#4B5563"
+                                color: isActive ? COLORS.text : COLORS.textSecondary,
                             }} numberOfLines={1}>
                                 {list.name}
                             </Text>
@@ -210,18 +203,19 @@ export const Sidebar = () => {
                 })}
             </ScrollView>
 
-            <View style={{ marginTop: "auto", paddingTop: 24, borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.05)" }}>
+            <View style={{ marginTop: "auto", paddingTop: 20, borderTopWidth: 1, borderTopColor: COLORS.border }}>
                 <TouchableOpacity
                     onPress={() => signOut()}
                     style={{
                         flexDirection: "row",
                         alignItems: "center",
                         paddingHorizontal: 16,
-                        paddingVertical: 12
+                        paddingVertical: 12,
+                        borderRadius: 8,
                     }}
                 >
-                    <FontAwesome name="sign-out" size={18} color="#71717A" style={{ width: 24 }} />
-                    <Text style={{ marginLeft: 8, color: "#71717A", fontWeight: "600" }}>Log out</Text>
+                    <FontAwesome name="sign-out" size={16} color={COLORS.textTertiary} style={{ width: 24, textAlign: 'center' }} />
+                    <Text style={{ marginLeft: 8, color: COLORS.textTertiary, fontWeight: "600", fontSize: 14 }}>Sign out</Text>
                 </TouchableOpacity>
             </View>
         </View>

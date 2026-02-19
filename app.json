@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Grocery",
-    "slug": "Grocery",
+    "name": "LYST",
+    "slug": "lyst-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,15 +10,17 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#E8F2FF"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lyst.app"
     },
     "android": {
+      "package": "com.lyst.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#E8F2FF"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
@@ -27,7 +29,7 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
       "output": "static",
-      "themeColor": "#8E8AFB"
+      "themeColor": "#1E3A6E"
     },
     "plugins": [
       "expo-router",

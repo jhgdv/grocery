@@ -1,8 +1,48 @@
 import React from "react";
-import { View, Text, Switch, TouchableOpacity, SafeAreaView, Alert } from "react-native";
+import { View, Text, Switch, TouchableOpacity, SafeAreaView, Alert, Platform } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import { FontAwesome } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
+
+const COLORS = {
+    bg: "#F4F6FC",
+    white: "#FFFFFF",
+    primary: "#6BA0D8",
+    primarySoft: "rgba(107, 160, 216, 0.1)",
+    accent: "#B39DDB",
+    accentSoft: "rgba(179, 157, 219, 0.12)",
+    success: "#5BC8A4",
+    successSoft: "rgba(91, 200, 164, 0.1)",
+    danger: "#E58A8A",
+    dangerSoft: "rgba(229, 138, 138, 0.1)",
+    text: "#1E293B",
+    textSecondary: "#5C6E82",
+    textTertiary: "#94A3B8",
+    border: "#DDE6F4",
+    borderLight: "#EEF3FA",
+};
+
+// Medical Card Component
+function AppCard({ children, style }: { children: React.ReactNode; style?: any }) {
+    return (
+        <View style={[
+            {
+                backgroundColor: COLORS.white,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: COLORS.border,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.05,
+                shadowRadius: 3,
+                elevation: 2,
+            },
+            style
+        ]}>
+            {children}
+        </View>
+    );
+}
 
 export default function Settings() {
     const { user, signOut } = useAuth();
@@ -13,7 +53,7 @@ export default function Settings() {
         user?.user_metadata?.full_name?.split(" ")[0] ||
         user?.user_metadata?.name?.split(" ")[0] ||
         user?.email?.split("@")[0]?.split(/[._-]/)[0]?.replace(/^\w/, (c: string) => c.toUpperCase()) ||
-        "Friend";
+        "User";
 
     const handleSignOut = async () => {
         try {
@@ -27,108 +67,203 @@ export default function Settings() {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
-            <View style={{ paddingHorizontal: 24, paddingTop: 20 }}>
-                <Text style={{ fontSize: 34, fontWeight: "900", color: "#000000", marginBottom: 32, letterSpacing: -1 }}>Settings</Text>
+            <View style={{ paddingHorizontal: 20, paddingTop: 20 }}>
+                <Text style={{ 
+                    fontSize: 28, 
+                    fontWeight: "800", 
+                    color: COLORS.text, 
+                    marginBottom: 24, 
+                    letterSpacing: -0.5,
+                }}>
+                    Settings
+                </Text>
 
                 {/* Profile Card */}
-                <View style={{
-                    backgroundColor: "rgba(255,255,255,0.7)",
-                    borderRadius: 30,
-                    padding: 24,
-                    marginBottom: 32,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    borderWidth: 1,
-                    borderColor: "rgba(255,255,255,0.5)",
-                    shadowColor: "#000",
-                    shadowOpacity: 0.05,
-                    shadowRadius: 15,
-                    shadowOffset: { width: 0, height: 10 },
-                    elevation: 4
-                }}>
+                <AppCard style={{ marginBottom: 24 }}>
                     <View style={{
-                        height: 64,
-                        width: 64,
-                        backgroundColor: "#8E8AFB",
-                        borderRadius: 22,
+                        padding: 20,
+                        flexDirection: "row",
                         alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: 20,
-                        shadowColor: "#8E8AFB",
-                        shadowOpacity: 0.3,
-                        shadowRadius: 10,
-                        shadowOffset: { width: 0, height: 5 }
                     }}>
-                        <Text style={{ color: "#fff", fontSize: 28, fontWeight: "800" }}>
-                            {firstName.charAt(0)}
-                        </Text>
+                        <View style={{
+                            height: 60,
+                            width: 60,
+                            borderRadius: 18,
+                            backgroundColor: COLORS.primarySoft,
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginRight: 16,
+                            borderWidth: 1,
+                            borderColor: "rgba(14, 165, 233, 0.2)",
+                        }}>
+                            <Text style={{ 
+                                color: COLORS.primary, 
+                                fontSize: 22, 
+                                fontWeight: "800",
+                            }}>
+                                {firstName.charAt(0)}
+                            </Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ 
+                                fontSize: 18, 
+                                fontWeight: "800", 
+                                color: COLORS.text, 
+                                marginBottom: 2,
+                            }}>
+                                {firstName}
+                            </Text>
+                            <Text style={{ 
+                                color: COLORS.textSecondary, 
+                                fontSize: 14, 
+                                fontWeight: "500",
+                            }}>
+                                {user?.email}
+                            </Text>
+                        </View>
+                        <TouchableOpacity style={{
+                            padding: 10,
+                            backgroundColor: COLORS.borderLight,
+                            borderRadius: 10,
+                        }}>
+                            <FontAwesome name="pencil" size={16} color={COLORS.textSecondary} />
+                        </TouchableOpacity>
                     </View>
-                    <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 20, fontWeight: "800", color: "#000000", marginBottom: 2 }}>
-                            {firstName}
-                        </Text>
-                        <Text style={{ color: "#71717A", fontSize: 15, fontWeight: "500" }}>{user?.email}</Text>
-                    </View>
-                </View>
+                </AppCard>
 
                 {/* Preferences Section */}
-                <Text style={{ color: "#000000", fontWeight: "800", marginBottom: 16, fontSize: 13, textTransform: "uppercase", letterSpacing: 1.5, marginLeft: 8 }}>Preferences</Text>
-                <View style={{
-                    backgroundColor: "rgba(255,255,255,0.7)",
-                    borderRadius: 28,
-                    overflow: "hidden",
-                    marginBottom: 32,
-                    borderWidth: 1,
-                    borderColor: "rgba(255,255,255,0.5)",
-                    shadowColor: "#000",
-                    shadowOpacity: 0.05,
-                    shadowRadius: 15,
-                    shadowOffset: { width: 0, height: 10 }
+                <Text style={{ 
+                    color: COLORS.textSecondary, 
+                    fontWeight: "800", 
+                    marginBottom: 12, 
+                    fontSize: 13, 
+                    textTransform: "uppercase", 
+                    letterSpacing: 0.5, 
+                    marginLeft: 4,
                 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 20 }}>
+                    Preferences
+                </Text>
+                
+                <AppCard style={{ marginBottom: 24 }}>
+                    <View style={{ 
+                        flexDirection: "row", 
+                        alignItems: "center", 
+                        justifyContent: "space-between", 
+                        padding: 18,
+                    }}>
                         <View style={{ flexDirection: "row", alignItems: "center" }}>
-                            <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: "#F2F1FF", alignItems: "center", justifyContent: "center", marginRight: 16 }}>
-                                <FontAwesome name="bell" size={16} color="#8E8AFB" />
+                            <View style={{ 
+                                width: 40, 
+                                height: 40, 
+                                borderRadius: 10, 
+                                backgroundColor: COLORS.primarySoft, 
+                                alignItems: "center", 
+                                justifyContent: "center", 
+                                marginRight: 14,
+                            }}>
+                                <FontAwesome name="bell" size={18} color={COLORS.primary} />
                             </View>
-                            <Text style={{ color: "#000000", fontSize: 17, fontWeight: "600" }}>Notifications</Text>
+                            <Text style={{ 
+                                color: COLORS.text, 
+                                fontSize: 16, 
+                                fontWeight: "600",
+                            }}>
+                                Notifications
+                            </Text>
                         </View>
                         <Switch
                             value={notifications}
                             onValueChange={setNotifications}
-                            trackColor={{ false: "#E5E5EA", true: "#8E8AFB" }}
-                            thumbColor={notifications ? "#ffffff" : "#f4f3f4"}
-                            ios_backgroundColor="#E5E5EA"
+                            trackColor={{ false: COLORS.border, true: COLORS.primary }}
+                            thumbColor={notifications ? "#fff" : "#fff"}
+                            ios_backgroundColor={COLORS.border}
                         />
                     </View>
-                </View>
+                    
+                    <View style={{ height: 1, backgroundColor: COLORS.border, marginHorizontal: 18 }} />
+                    
+                    <TouchableOpacity style={{ 
+                        flexDirection: "row", 
+                        alignItems: "center", 
+                        justifyContent: "space-between", 
+                        padding: 18,
+                    }}>
+                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                            <View style={{ 
+                                width: 40, 
+                                height: 40, 
+                                borderRadius: 10, 
+                                backgroundColor: COLORS.successSoft, 
+                                alignItems: "center", 
+                                justifyContent: "center", 
+                                marginRight: 14,
+                            }}>
+                                <FontAwesome name="lock" size={18} color={COLORS.success} />
+                            </View>
+                            <Text style={{ 
+                                color: COLORS.text, 
+                                fontSize: 16, 
+                                fontWeight: "600",
+                            }}>
+                                Privacy & Security
+                            </Text>
+                        </View>
+                        <FontAwesome name="chevron-right" size={16} color={COLORS.textTertiary} />
+                    </TouchableOpacity>
+                </AppCard>
 
                 {/* Account Section */}
-                <Text style={{ color: "#000000", fontWeight: "800", marginBottom: 16, fontSize: 13, textTransform: "uppercase", letterSpacing: 1.5, marginLeft: 8 }}>Account</Text>
-                <View style={{
-                    backgroundColor: "rgba(255,255,255,0.7)",
-                    borderRadius: 28,
-                    overflow: "hidden",
-                    marginBottom: 32,
-                    borderWidth: 1,
-                    borderColor: "rgba(255,255,255,0.5)",
-                    shadowColor: "#000",
-                    shadowOpacity: 0.05,
-                    shadowRadius: 15,
-                    shadowOffset: { width: 0, height: 10 }
+                <Text style={{ 
+                    color: COLORS.textSecondary, 
+                    fontWeight: "800", 
+                    marginBottom: 12, 
+                    fontSize: 13, 
+                    textTransform: "uppercase", 
+                    letterSpacing: 0.5, 
+                    marginLeft: 4,
                 }}>
+                    Account
+                </Text>
+                
+                <AppCard style={{ marginBottom: 24 }}>
                     <TouchableOpacity
-                        style={{ padding: 20, flexDirection: "row", alignItems: "center" }}
+                        style={{ 
+                            padding: 18, 
+                            flexDirection: "row", 
+                            alignItems: "center",
+                        }}
                         onPress={handleSignOut}
                         activeOpacity={0.7}
                     >
-                        <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: "#FFF1F1", alignItems: "center", justifyContent: "center", marginRight: 16 }}>
-                            <FontAwesome name="sign-out" size={18} color="#FF7E73" />
+                        <View style={{ 
+                            width: 40, 
+                            height: 40, 
+                            borderRadius: 10, 
+                            backgroundColor: COLORS.dangerSoft, 
+                            alignItems: "center", 
+                            justifyContent: "center", 
+                            marginRight: 14,
+                        }}>
+                            <FontAwesome name="sign-out" size={18} color={COLORS.danger} />
                         </View>
-                        <Text style={{ color: "#FF7E73", fontWeight: "700", fontSize: 17 }}>Logout</Text>
+                        <Text style={{ 
+                            color: COLORS.danger, 
+                            fontWeight: "700", 
+                            fontSize: 16,
+                        }}>
+                            Logout
+                        </Text>
                     </TouchableOpacity>
-                </View>
+                </AppCard>
 
-                <Text style={{ textAlign: "center", color: "#A1A1AA", fontSize: 14, fontWeight: "600" }}>Version 1.1.0</Text>
+                <Text style={{ 
+                    textAlign: "center", 
+                    color: COLORS.textTertiary, 
+                    fontSize: 13, 
+                    fontWeight: "600",
+                }}>
+                    Version 1.1.0 • LYST
+                </Text>
             </View>
         </SafeAreaView>
     );

@@ -1,19 +1,29 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { supabase } from "../../lib/supabase";
 
+const COLORS = {
+    bg: "#F4F6FC",
+    white: "#FFFFFF",
+    primary: "#6BA0D8",
+    primarySoft: "rgba(107, 160, 216, 0.1)",
+    accent: "#B39DDB",
+    text: "#1E293B",
+    textSecondary: "#5C6E82",
+    textTertiary: "#94A3B8",
+    border: "#DDE6F4",
+    borderLight: "#EEF3FA",
+};
+
 export default function Verify() {
     const { email } = useLocalSearchParams<{ email: string }>();
-    // We use an array for the 6 digits if we want individual boxes, but for simplicity let's stick to one main input first 
-    // or implement a simple single input that looks good.
     const [code, setCode] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
     const handleVerify = async () => {
-        // Allow flexible OTP lengths (typically 6, but sometimes 4 or 8)
         if (code.length < 4 || code.length > 8) {
             Alert.alert("Error", "Please enter a valid code");
             return;
@@ -30,8 +40,6 @@ export default function Verify() {
 
         if (error) {
             Alert.alert("Invalid Code", "Please check the code and try again.");
-        } else {
-            // AuthContext will handle the redirect
         }
     };
 
@@ -39,101 +47,140 @@ export default function Verify() {
         <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                style={{ flex: 1, justifyContent: "center", paddingHorizontal: 32 }}
+                style={{ flex: 1, justifyContent: "center", paddingHorizontal: 24 }}
             >
                 <TouchableOpacity
                     onPress={() => router.back()}
                     style={{
                         position: "absolute",
-                        top: 60,
-                        left: 24,
+                        top: 40,
+                        left: 20,
                         zIndex: 10,
                         height: 48,
                         width: 48,
-                        borderRadius: 24,
-                        backgroundColor: "white",
+                        borderRadius: 12,
+                        backgroundColor: COLORS.white,
+                        borderWidth: 1,
+                        borderColor: COLORS.border,
                         alignItems: "center",
                         justifyContent: "center",
-                        shadowColor: "#000",
-                        shadowOpacity: 0.05,
-                        shadowRadius: 10,
-                        elevation: 2
                     }}
                 >
-                    <FontAwesome name="chevron-left" size={16} color="#000000" />
+                    <FontAwesome name="chevron-left" size={16} color={COLORS.text} />
                 </TouchableOpacity>
 
-                <View style={{ alignItems: "center", marginBottom: 48 }}>
-                    <Text style={{ fontSize: 36, fontWeight: "900", color: "#000000", marginBottom: 12, textAlign: "center" }}>
-                        Confirm it's you
+                <View style={{ alignItems: "center", marginBottom: 40 }}>
+                    <View style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 20,
+                        backgroundColor: COLORS.primarySoft,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginBottom: 24,
+                        borderWidth: 1,
+                        borderColor: "rgba(14, 165, 233, 0.2)",
+                    }}>
+                        <FontAwesome name="lock" size={32} color={COLORS.primary} />
+                    </View>
+                    <Text style={{ 
+                        fontSize: 26, 
+                        fontWeight: "800", 
+                        color: COLORS.text, 
+                        marginBottom: 12, 
+                        textAlign: "center",
+                    }}>
+                        Verify your email
                     </Text>
-                    <Text style={{ color: "#71717A", textAlign: "center", fontSize: 17, fontWeight: "500", lineHeight: 24 }}>
+                    <Text style={{ 
+                        color: COLORS.textSecondary, 
+                        textAlign: "center", 
+                        fontSize: 15, 
+                        fontWeight: "500", 
+                        lineHeight: 22,
+                    }}>
                         We've sent a code to{"\n"}
-                        <Text style={{ fontWeight: "800", color: "#FF7E73" }}>{email}</Text>
+                        <Text style={{ fontWeight: "700", color: COLORS.text }}>{email}</Text>
                     </Text>
                 </View>
 
-                <View>
-                    <View style={{ marginBottom: 32 }}>
+                <View style={{
+                    backgroundColor: COLORS.white,
+                    padding: 28,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: COLORS.border,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 10,
+                    elevation: 3,
+                }}>
+                    <View style={{ marginBottom: 24 }}>
                         <TextInput
                             style={{
                                 width: "100%",
-                                backgroundColor: "white",
-                                paddingVertical: 24,
-                                borderRadius: 28,
+                                backgroundColor: COLORS.bg,
+                                paddingVertical: 18,
+                                borderRadius: 12,
                                 textAlign: "center",
-                                fontSize: 36,
+                                fontSize: 32,
                                 fontWeight: "800",
-                                color: "#000000",
+                                color: COLORS.text,
                                 letterSpacing: 8,
-                                shadowColor: "#FF7E73",
-                                shadowOpacity: 0.1,
-                                shadowRadius: 20,
-                                shadowOffset: { width: 0, height: 10 },
-                                elevation: 5,
                                 borderWidth: 1,
-                                borderColor: "rgba(255,255,255,0.8)"
+                                borderColor: COLORS.border,
                             }}
                             placeholder="000000"
-                            placeholderTextColor="#E5E5EA"
+                            placeholderTextColor={COLORS.textTertiary}
                             value={code}
                             onChangeText={setCode}
                             keyboardType="number-pad"
-                            maxLength={8}
+                            maxLength={6}
                             autoFocus
                         />
                     </View>
 
                     <TouchableOpacity
-                        style={{
-                            width: "100%",
-                            backgroundColor: "#FF7E73",
-                            paddingVertical: 20,
-                            borderRadius: 24,
-                            alignItems: "center",
-                            shadowColor: "#FF7E73",
-                            shadowOpacity: 0.3,
-                            shadowRadius: 15,
-                            shadowOffset: { width: 0, height: 8 },
-                            opacity: loading ? 0.7 : 1
-                        }}
                         onPress={handleVerify}
                         disabled={loading}
-                        activeOpacity={0.8}
+                        style={{
+                            backgroundColor: COLORS.primary,
+                            // @ts-ignore
+                            background: 'linear-gradient(135deg, #6BA0D8 0%, #B39DDB 100%)',
+                            paddingVertical: 18,
+                            borderRadius: 14,
+                            alignItems: "center",
+                            shadowColor: "#8A9FD8",
+                            shadowOpacity: 0.35,
+                            shadowRadius: 14,
+                            shadowOffset: { width: 0, height: 5 },
+                        }}
                     >
                         {loading ? (
-                            <ActivityIndicator color="white" />
+                            <ActivityIndicator color="#ffffff" />
                         ) : (
-                            <Text style={{ color: "white", fontWeight: "800", fontSize: 18, letterSpacing: 1 }}>Verify Account</Text>
+                            <Text style={{ 
+                                color: "#ffffff", 
+                                fontWeight: "700", 
+                                fontSize: 16,
+                            }}>
+                                Verify Account
+                            </Text>
                         )}
                     </TouchableOpacity>
 
                     <TouchableOpacity
                         onPress={() => router.back()}
-                        style={{ marginTop: 24 }}
+                        style={{ marginTop: 20 }}
                     >
-                        <Text style={{ textAlign: "center", color: "#71717A", fontWeight: "700" }}>
-                            Wrong email? <Text style={{ color: "#FF7E73" }}>Try again</Text>
+                        <Text style={{ 
+                            textAlign: "center", 
+                            color: COLORS.textSecondary, 
+                            fontWeight: "600", 
+                            fontSize: 14,
+                        }}>
+                            Wrong email? <Text style={{ color: COLORS.text, fontWeight: "700" }}>Try again</Text>
                         </Text>
                     </TouchableOpacity>
                 </View>

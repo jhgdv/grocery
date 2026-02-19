@@ -1,6 +1,17 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { View, Text, FlatList, TouchableOpacity, SafeAreaView, TextInput, ActivityIndicator, Alert, Platform } from "react-native";
-import { Logo } from "../../components/Logo";
+import { 
+    View, 
+    Text, 
+    FlatList, 
+    TouchableOpacity, 
+    SafeAreaView, 
+    TextInput, 
+    ActivityIndicator, 
+    Alert, 
+    Platform,
+    Image,
+    ScrollView
+} from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
@@ -12,6 +23,98 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const PIN_STORAGE_KEY = "pinned_lists";
 
+const COLORS = {
+    bg: "#F4F6FC",
+    white: "#FFFFFF",
+    primary: "#6BA0D8",
+    primaryLight: "#91BBE6",
+    primarySoft: "rgba(107, 160, 216, 0.1)",
+    dark: "#1E3A6E",
+    darkSoft: "rgba(30, 58, 110, 0.1)",
+    pink: "#F4B8CE",
+    pinkSoft: "rgba(244, 184, 206, 0.2)",
+    accent: "#B39DDB",
+    accentSoft: "rgba(179, 157, 219, 0.12)",
+    success: "#5BC8A4",
+    successSoft: "rgba(91, 200, 164, 0.1)",
+    text: "#1E293B",
+    textSecondary: "#5C6E82",
+    textTertiary: "#94A3B8",
+    border: "#DDE6F4",
+    borderLight: "#EEF3FA",
+};
+
+function AppCard({ children, style, onPress }: { children: React.ReactNode; style?: any; onPress?: () => void }) {
+    return (
+        <TouchableOpacity
+            onPress={onPress}
+            activeOpacity={0.88}
+            style={[
+                {
+                    backgroundColor: COLORS.white,
+                    borderRadius: 18,
+                    borderWidth: 1,
+                    borderColor: COLORS.border,
+                    shadowColor: "#6BA0D8",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.07,
+                    shadowRadius: 10,
+                    elevation: 2,
+                },
+                style
+            ]}
+        >
+            {children}
+        </TouchableOpacity>
+    );
+}
+
+// Stats Card Component
+function StatsCard({ icon, value, label, color, iconColor }: { icon: string; value: string; label: string; color: string; iconColor?: string }) {
+    return (
+        <View style={{
+            flex: 1,
+            backgroundColor: COLORS.white,
+            borderRadius: 18,
+            padding: 18,
+            borderWidth: 1,
+            borderColor: COLORS.border,
+            alignItems: "center",
+            shadowColor: "#6BA0D8",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.06,
+            shadowRadius: 8,
+        }}>
+            <View style={{
+                width: 46,
+                height: 46,
+                borderRadius: 14,
+                backgroundColor: color,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 10,
+            }}>
+                <FontAwesome name={icon as any} size={20} color={iconColor || COLORS.primary} />
+            </View>
+            <Text style={{
+                fontSize: 24,
+                fontWeight: "800",
+                color: COLORS.text,
+                marginBottom: 2,
+            }}>
+                {value}
+            </Text>
+            <Text style={{
+                fontSize: 12,
+                color: COLORS.textSecondary,
+                fontWeight: "500",
+            }}>
+                {label}
+            </Text>
+        </View>
+    );
+}
+
 export default function Lists() {
     const router = useRouter();
     const { user } = useAuth();
@@ -21,14 +124,16 @@ export default function Lists() {
     const [actionModalVisible, setActionModalVisible] = useState(false);
     const [iconModalVisible, setIconModalVisible] = useState(false);
     const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
+    const [sharedWithMeIds, setSharedWithMeIds] = useState<Set<string>>(new Set());
     const [pendingInvites, setPendingInvites] = useState<any[]>([]);
+    const [searchQuery, setSearchQuery] = useState("");
     const isFocused = useIsFocused();
 
     const firstName =
         user?.user_metadata?.full_name?.split(" ")[0] ||
         user?.user_metadata?.name?.split(" ")[0] ||
         user?.email?.split("@")[0]?.split(/[._-]/)[0]?.replace(/^\w/, (c: string) => c.toUpperCase()) ||
-        "Friend";
+        "User";
 
     useEffect(() => {
         loadPinnedIds();
@@ -60,11 +165,9 @@ export default function Lists() {
 
     useEffect(() => {
         if (!user) return;
-
         fetchLists();
         fetchInvites();
 
-        // Real-time synchronization
         const channel = supabase
             .channel('dashboard-sync')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'lists' }, () => {
@@ -123,7 +226,6 @@ export default function Lists() {
                 if (error) throw error;
             }
 
-            // Refresh
             fetchInvites();
             fetchLists();
 
@@ -139,16 +241,13 @@ export default function Lists() {
         if (!user) return;
         try {
             setLoading(true);
-
-            // Fetch lists owned by the user
             const { data: ownedLists, error: ownedError } = await supabase
                 .from("lists")
-                .select("*")
+                .select("*, items:items(id, checked)")
                 .eq("user_id", user.id);
 
             if (ownedError) throw ownedError;
 
-            // Fetch lists shared with the user
             const { data: sharedShares, error: sharedError } = await supabase
                 .from("list_shares")
                 .select("list_id, lists(*)")
@@ -163,7 +262,8 @@ export default function Lists() {
                 .map(share => share.lists)
                 .filter(Boolean);
 
-            // Combine and sort
+            setSharedWithMeIds(new Set((sharedShares || []).map((s: any) => s.list_id).filter(Boolean)));
+
             const allLists = [...(ownedLists || []), ...sharedLists];
             const uniqueLists = Array.from(new Map(allLists.map(l => [l.id, l])).values());
 
@@ -215,35 +315,6 @@ export default function Lists() {
         }
     };
 
-    const reorderList = async (direction: "up" | "down", list: any) => {
-        const index = sortedLists.findIndex(l => l.id === list.id);
-        if (index === -1) return;
-
-        const targetIndex = direction === "up" ? index - 1 : index + 1;
-        if (targetIndex < 0 || targetIndex >= sortedLists.length) return;
-
-        const targetList = sortedLists[targetIndex];
-
-        // Pin logic: you can only reorder pinned with pinned or unpinned with unpinned to avoid jumping
-        const listIsPinned = pinnedIds.has(list.id);
-        const targetIsPinned = pinnedIds.has(targetList.id);
-        if (listIsPinned !== targetIsPinned) return;
-
-        const listTimestamp = list.created_at;
-        const targetTimestamp = targetList.created_at;
-
-        // DB Update
-        try {
-            await Promise.all([
-                supabase.from("lists").update({ created_at: targetTimestamp }).eq("id", list.id),
-                supabase.from("lists").update({ created_at: listTimestamp }).eq("id", targetList.id)
-            ]);
-            fetchLists(); // Refresh
-        } catch (error) {
-            console.error("Failed to reorder list", error);
-        }
-    };
-
     const openActions = (list: any) => {
         setSelectedList(list);
         setActionModalVisible(true);
@@ -259,203 +330,362 @@ export default function Lists() {
         const bPinned = pinnedIds.has(b.id);
         if (aPinned && !bPinned) return -1;
         if (!aPinned && bPinned) return 1;
-        // Secondary sort by created_at descending (newest first)
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
-    const renderListIcon = (icon: string, size: number = 28) => {
-        if (!icon) return <Text style={{ fontSize: size }}>🛒</Text>;
-        const isEmoji = /\p{Emoji}/u.test(icon) || icon.length <= 2;
-        if (isEmoji) return <Text style={{ fontSize: size }}>{icon}</Text>;
-        // @ts-ignore
-        return <FontAwesome name={icon} size={size * 0.8} color="#FF7E73" />;
+    const filteredLists = sortedLists.filter(list =>
+        list.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const renderListIcon = (icon: string) => {
+        const isEmoji = icon && (/\p{Emoji_Presentation}/u.test(icon) || (icon.length <= 2 && /\p{Emoji}/u.test(icon)));
+        const iconName: any = (!icon || isEmoji) ? "shopping-basket" : icon;
+        return (
+            <View style={{
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                backgroundColor: COLORS.primarySoft,
+                alignItems: "center",
+                justifyContent: "center",
+            }}>
+                <FontAwesome name={iconName} size={22} color={COLORS.primary} />
+            </View>
+        );
     };
 
     const renderItem = ({ item }: { item: any }) => {
-        const isPinned = pinnedIds.has(item.id);
+        const itemList: any[] = item.items || [];
+        const totalItems = itemList.length;
+        const checkedItems = itemList.filter((i: any) => i.checked).length;
+        const progress = totalItems > 0 ? checkedItems / totalItems : 0;
+        const isComplete = totalItems > 0 && checkedItems === totalItems;
 
         return (
-            <TouchableOpacity
-                style={{
-                    backgroundColor: "rgba(255,255,255,0.7)",
-                    padding: 16,
-                    borderRadius: 30,
-                    marginBottom: 16,
-                    flexDirection: "row",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    borderWidth: 1,
-                    borderColor: isPinned ? "rgba(142, 138, 251, 0.3)" : "rgba(255,255,255,0.5)",
-                    shadowColor: "#8E8AFB",
-                    shadowOpacity: 0.08,
-                    shadowRadius: 15,
-                    shadowOffset: { width: 0, height: 10 },
-                    elevation: 4,
-                }}
+            <AppCard
+                style={{ marginBottom: 12 }}
                 onPress={() => router.push(`/list/${item.id}`)}
-                activeOpacity={0.8}
             >
-                <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-                    <TouchableOpacity
-                        onPress={(e) => { e.stopPropagation(); openIconPicker(item); }}
-                        style={{
-                            height: 56,
-                            width: 56,
-                            backgroundColor: "white",
-                            borderRadius: 20,
-                            alignItems: "center",
-                            justifyContent: "center",
-                            marginRight: 16,
-                            shadowColor: "#FF7E73",
-                            shadowOpacity: 0.1,
-                            shadowRadius: 10,
-                            shadowOffset: { width: 0, height: 5 },
-                            borderWidth: 1,
-                            borderColor: "rgba(255,255,255,0.8)"
-                        }}
-                    >
-                        {renderListIcon(item.icon)}
-                    </TouchableOpacity>
-                    <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: "row", alignItems: "center" }}>
-                            {isPinned && <FontAwesome name="thumb-tack" size={12} color="#8E8AFB" style={{ marginRight: 8, transform: [{ rotate: '45deg' }] }} />}
-                            <Text style={{ fontSize: 19, fontWeight: "800", color: "#000000" }} numberOfLines={1}>{item.name}</Text>
-                        </View>
-                        <View style={{ flexDirection: "row", alignItems: "center", marginTop: 4 }}>
-                            <Text style={{ color: "#71717A", fontSize: 14, fontWeight: "600" }}>View items</Text>
-                            <FontAwesome name="chevron-right" size={10} color="#D1D1D6" style={{ marginLeft: 6 }} />
-                        </View>
+                <View style={{ padding: 16, flexDirection: "row", alignItems: "center" }}>
+                    <View style={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 14,
+                        backgroundColor: isComplete ? COLORS.successSoft : COLORS.primarySoft,
+                        alignItems: "center",
+                        justifyContent: "center",
+                    }}>
+                        {(() => {
+                            const isEmoji = item.icon && (/\p{Emoji_Presentation}/u.test(item.icon) || (item.icon.length <= 2 && /\p{Emoji}/u.test(item.icon)));
+                            const iconName: any = (!item.icon || isEmoji) ? "list" : item.icon;
+                            return <FontAwesome name={iconName} size={22} color={isComplete ? COLORS.success : COLORS.primary} />;
+                        })()}
                     </View>
+
+                    <View style={{ flex: 1, marginLeft: 14 }}>
+                        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 3 }}>
+                            <Text style={{
+                                fontSize: 16,
+                                fontWeight: "700",
+                                color: COLORS.text,
+                                flex: 1,
+                            }} numberOfLines={1}>
+                                {item.name}
+                            </Text>
+                            {sharedWithMeIds.has(item.id) && (
+                                <View style={{
+                                    backgroundColor: COLORS.darkSoft,
+                                    borderRadius: 6,
+                                    paddingHorizontal: 6,
+                                    paddingVertical: 2,
+                                    marginLeft: 6,
+                                }}>
+                                    <Text style={{ fontSize: 9, fontWeight: "800", color: COLORS.dark, textTransform: "uppercase", letterSpacing: 0.4 }}>Shared</Text>
+                                </View>
+                            )}
+                        </View>
+
+                        {totalItems > 0 ? (
+                            <View>
+                                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 5 }}>
+                                    <Text style={{ color: COLORS.textSecondary, fontSize: 12, fontWeight: "500" }}>
+                                        {isComplete ? "All done!" : `${checkedItems} of ${totalItems} done`}
+                                    </Text>
+                                    {pinnedIds.has(item.id) && (
+                                        <FontAwesome name="thumb-tack" size={10} color={COLORS.textTertiary} style={{ marginLeft: 6 }} />
+                                    )}
+                                </View>
+                                <View style={{
+                                    height: 4,
+                                    backgroundColor: COLORS.borderLight,
+                                    borderRadius: 2,
+                                    overflow: "hidden",
+                                }}>
+                                    <View style={{
+                                        height: 4,
+                                        width: `${progress * 100}%` as any,
+                                        backgroundColor: isComplete ? COLORS.success : COLORS.primary,
+                                        borderRadius: 2,
+                                    }} />
+                                </View>
+                            </View>
+                        ) : (
+                            <Text style={{ color: COLORS.textTertiary, fontSize: 13, fontWeight: "500" }}>
+                                Empty — tap to add items
+                            </Text>
+                        )}
+                    </View>
+
+                    <TouchableOpacity
+                        onPress={(e) => { e.stopPropagation(); openActions(item); }}
+                        style={{ padding: 10, borderRadius: 8 }}
+                        hitSlop={12}
+                    >
+                        <FontAwesome name="ellipsis-v" size={16} color={COLORS.textTertiary} />
+                    </TouchableOpacity>
                 </View>
-                <TouchableOpacity onPress={(e) => { e.stopPropagation(); openActions(item); }} style={{ padding: 12 }} hitSlop={12}>
-                    <FontAwesome name="ellipsis-h" size={18} color="#A1A1AA" />
-                </TouchableOpacity>
-            </TouchableOpacity>
+            </AppCard>
         );
     };
+
+    const renderInviteCard = ({ item }: { item: any }) => (
+        <AppCard style={{ marginBottom: 12 }}>
+            <View style={{ padding: 16, flexDirection: "row", alignItems: "center" }}>
+                <View style={{ 
+                    width: 48,
+                    height: 48,
+                    borderRadius: 12,
+                    backgroundColor: COLORS.primarySoft,
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}>
+                    <FontAwesome
+                        name={(() => { const ic = item.lists?.icon; const isEmoji = ic && (/\p{Emoji_Presentation}/u.test(ic) || (ic.length <= 2 && /\p{Emoji}/u.test(ic))); return (!ic || isEmoji ? "shopping-basket" : ic) as any; })()}
+                        size={22}
+                        color={COLORS.primary}
+                    />
+                </View>
+                <View style={{ flex: 1, marginLeft: 14 }}>
+                    <Text style={{ 
+                        fontSize: 15, 
+                        fontWeight: "700", 
+                        color: COLORS.text,
+                        marginBottom: 2,
+                    }}>
+                        {item.lists?.name}
+                    </Text>
+                    <Text style={{ 
+                        color: COLORS.textSecondary, 
+                        fontSize: 13,
+                        fontWeight: "500"
+                    }}>
+                        Collaboration invite
+                    </Text>
+                </View>
+                <View style={{ flexDirection: "row", gap: 8 }}>
+                    <TouchableOpacity
+                        onPress={() => respondToInvite(item.id, "accepted")}
+                        style={{
+                            backgroundColor: COLORS.success,
+                            width: 40,
+                            height: 40,
+                            borderRadius: 10,
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <FontAwesome name="check" size={16} color="white" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={() => respondToInvite(item.id, "declined")}
+                        style={{
+                            backgroundColor: COLORS.border,
+                            width: 40,
+                            height: 40,
+                            borderRadius: 10,
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <FontAwesome name="times" size={16} color={COLORS.textSecondary} />
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </AppCard>
+    );
 
     if (!isFocused) return <View style={{ flex: 1, backgroundColor: "transparent" }} />;
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
-            <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 8 }}>
+            <ScrollView 
+                style={{ flex: 1 }}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ padding: 20 }}
+            >
                 {/* Header */}
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 32, marginTop: 16 }}>
-                    <Logo size={48} />
-                    <View style={{ alignItems: "flex-end" }}>
-                        <Text style={{ color: "#71717A", fontSize: 13, fontWeight: "700", textTransform: "uppercase", letterSpacing: 2, marginBottom: 4 }}>
-                            Hey,
-                        </Text>
-                        <Text style={{ fontSize: 32, fontWeight: "900", color: "#000000" }}>
-                            {firstName}
-                        </Text>
-                    </View>
+                <View style={{ marginBottom: 24 }}>
+                    <Text style={{
+                        fontSize: 26,
+                        fontWeight: "800",
+                        color: COLORS.text,
+                        marginBottom: 4,
+                    }}>
+                        Hello, {firstName}
+                    </Text>
+                    <Text style={{
+                        fontSize: 15,
+                        color: COLORS.textSecondary,
+                        fontWeight: "500",
+                    }}>
+                        Here are your lists
+                    </Text>
+                </View>
+
+                {/* Stats Row */}
+                <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
+                    <StatsCard
+                        icon="list"
+                        value={String(lists.length)}
+                        label="Lists"
+                        color={COLORS.primarySoft}
+                        iconColor={COLORS.primary}
+                    />
+                    <StatsCard
+                        icon="users"
+                        value={String(lists.length > 0 ? lists.length : 0)}
+                        label="Shared"
+                        color={COLORS.accentSoft}
+                        iconColor={COLORS.accent}
+                    />
                 </View>
 
                 {/* Pending Invites */}
                 {pendingInvites.length > 0 && (
-                    <View style={{ marginBottom: 32 }}>
-                        <Text style={{ fontSize: 13, fontWeight: "800", color: "#A1A1AA", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 16, marginLeft: 8 }}>
+                    <View style={{ marginBottom: 24 }}>
+                        <Text style={{
+                            fontSize: 14,
+                            fontWeight: "700",
+                            color: COLORS.text,
+                            marginBottom: 12,
+                        }}>
                             Pending Invites
                         </Text>
-                        {pendingInvites.map((invite) => (
-                            <View
-                                key={invite.id}
-                                style={{
-                                    backgroundColor: "rgba(255, 241, 241, 0.7)",
-                                    padding: 20,
-                                    borderRadius: 28,
-                                    flexDirection: "row",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    borderWidth: 1,
-                                    borderColor: "rgba(255, 126, 115, 0.2)",
-                                    marginBottom: 12,
-                                    shadowColor: "#FF7E73",
-                                    shadowOffset: { width: 0, height: 10 },
-                                    shadowOpacity: 0.05,
-                                    shadowRadius: 15,
-                                    elevation: 2
-                                }}
-                            >
-                                <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-                                    <View style={{ width: 48, height: 48, backgroundColor: "white", borderRadius: 16, alignItems: "center", justifyContent: "center", marginRight: 16, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 5 }}>
-                                        <Text style={{ fontSize: 24 }}>{invite.lists?.icon || "🛒"}</Text>
-                                    </View>
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={{ fontSize: 17, fontWeight: "800", color: "#000000" }}>{invite.lists?.name}</Text>
-                                        <Text style={{ color: "#71717A", fontSize: 14, fontWeight: "500" }}>Invite from someone</Text>
-                                    </View>
-                                </View>
-                                <View style={{ flexDirection: "row" }}>
-                                    <TouchableOpacity
-                                        onPress={() => respondToInvite(invite.id, "accepted")}
-                                        style={{ backgroundColor: "#8E8AFB", width: 44, height: 44, borderRadius: 15, alignItems: "center", justifyContent: "center", marginRight: 8 }}
-                                    >
-                                        <FontAwesome name="check" size={18} color="white" />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        onPress={() => respondToInvite(invite.id, "declined")}
-                                        style={{ backgroundColor: "white", width: 44, height: 44, borderRadius: 15, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "rgba(255, 126, 115, 0.3)" }}
-                                    >
-                                        <FontAwesome name="times" size={18} color="#FF7E73" />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-                        ))}
+                        {pendingInvites.map((invite) => renderInviteCard({ item: invite }))}
                     </View>
                 )}
 
                 {/* Search Bar */}
                 <View style={{
-                    backgroundColor: "rgba(255,255,255,0.7)",
-                    borderRadius: 26,
-                    paddingHorizontal: 20,
-                    height: 60,
+                    backgroundColor: COLORS.white,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    borderColor: COLORS.border,
                     flexDirection: "row",
                     alignItems: "center",
-                    marginBottom: 32,
-                    borderWidth: 1,
-                    borderColor: "rgba(255,255,255,0.8)",
-                    shadowColor: "#8E8AFB",
-                    shadowOpacity: 0.05,
-                    shadowRadius: 15,
-                    shadowOffset: { width: 0, height: 8 },
-                    elevation: 4
+                    paddingHorizontal: 16,
+                    height: 52,
+                    marginBottom: 24,
                 }}>
-                    <FontAwesome name="search" size={16} color="#A1A1AA" style={{ marginRight: 12 }} />
+                    <FontAwesome name="search" size={18} color={COLORS.textTertiary} style={{ marginRight: 12 }} />
                     <TextInput
-                        placeholder="Search your lists..."
-                        placeholderTextColor="#A1A1AA"
-                        style={{ flex: 1, fontSize: 17, fontWeight: "600", color: "#000000" }}
+                        placeholder="Search lists..."
+                        placeholderTextColor={COLORS.textTertiary}
+                        style={{ 
+                            flex: 1, 
+                            fontSize: 15, 
+                            fontWeight: "500", 
+                            color: COLORS.text,
+                        }}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
                     />
+                    {searchQuery.length > 0 && (
+                        <TouchableOpacity onPress={() => setSearchQuery("")}>
+                            <FontAwesome name="times-circle" size={20} color={COLORS.textTertiary} />
+                        </TouchableOpacity>
+                    )}
                 </View>
 
-                {/* Lists Section */}
-                <Text style={{ fontSize: 13, fontWeight: "800", color: "#A1A1AA", letterSpacing: 1.5, textTransform: "uppercase", marginBottom: 16, marginLeft: 8 }}>
-                    My Lists
-                </Text>
+                {/* Section Header */}
+                <View style={{ 
+                    flexDirection: 'row', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between', 
+                    marginBottom: 16,
+                }}>
+                    <Text style={{
+                        fontSize: 18,
+                        fontWeight: "800",
+                        color: COLORS.text,
+                    }}>
+                        My Lists
+                    </Text>
+                    
+                    <TouchableOpacity
+                        onPress={() => router.push("/list/create")}
+                        style={{
+                            backgroundColor: COLORS.primary,
+                            // @ts-ignore
+                            background: 'linear-gradient(135deg, #6BA0D8 0%, #B39DDB 100%)',
+                            width: 42,
+                            height: 42,
+                            borderRadius: 13,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            shadowColor: "#8A9FD8",
+                            shadowOffset: { width: 0, height: 3 },
+                            shadowOpacity: 0.3,
+                            shadowRadius: 8,
+                        }}
+                    >
+                        <FontAwesome name="plus" size={18} color="white" />
+                    </TouchableOpacity>
+                </View>
+
+                {/* Lists */}
                 {loading ? (
-                    <ActivityIndicator color="#D97D73" style={{ marginTop: 40 }} />
+                    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 40 }}>
+                        <ActivityIndicator color={COLORS.primary} size="large" />
+                    </View>
                 ) : (
-                    <FlatList
-                        data={sortedLists}
-                        keyExtractor={(item) => item.id}
-                        renderItem={renderItem}
-                        contentContainerStyle={{ paddingBottom: 100 }}
-                        showsVerticalScrollIndicator={false}
-                        refreshing={loading}
-                        onRefresh={fetchLists}
-                        ListEmptyComponent={
-                            <View style={{ alignItems: "center", justifyContent: "center", marginTop: 80, opacity: 0.5 }}>
-                                <FontAwesome name="shopping-basket" size={48} color="#9ca3af" />
-                                <Text style={{ color: "#9ca3af", fontSize: 18, marginTop: 16, fontWeight: "600" }}>No lists yet</Text>
-                                <Text style={{ color: "#9ca3af", fontSize: 14, marginTop: 4 }}>Tap + to get started</Text>
+                    <>
+                        {filteredLists.map((item) => renderItem({ item }))}
+                        
+                        {filteredLists.length === 0 && (
+                            <View style={{ alignItems: "center", justifyContent: "center", marginTop: 60 }}>
+                                <View style={{
+                                    width: 80,
+                                    height: 80,
+                                    borderRadius: 24,
+                                    backgroundColor: COLORS.borderLight,
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    marginBottom: 16,
+                                }}>
+                                    <FontAwesome name="list-ul" size={32} color={COLORS.textTertiary} />
+                                </View>
+                                <Text style={{
+                                    color: COLORS.textSecondary,
+                                    fontSize: 16,
+                                    fontWeight: "600",
+                                    marginBottom: 4,
+                                }}>
+                                    No lists yet
+                                </Text>
+                                <Text style={{
+                                    color: COLORS.textTertiary,
+                                    fontSize: 14,
+                                }}>
+                                    Create your first list
+                                </Text>
                             </View>
-                        }
-                    />
+                        )}
+                    </>
                 )}
-            </View>
+
+                <View style={{ height: 100 }} />
+            </ScrollView>
 
             <ListActionModal
                 visible={actionModalVisible}
@@ -466,12 +696,32 @@ export default function Lists() {
                         icon: "thumb-tack",
                         label: pinnedIds.has(selectedList?.id) ? "Unpin" : "Pin",
                         action: () => togglePin(selectedList?.id),
-                        color: "#22c55e",
+                        color: COLORS.primary,
                     },
-                    { icon: "smile-o", label: "Change Icon", action: () => { setActionModalVisible(false); setIconModalVisible(true); }, color: "#D97D73" },
-                    { icon: "clone", label: "Duplicate", action: () => duplicateList(selectedList), color: "#1f2937" },
-                    { icon: "share-alt", label: "Share", action: () => router.push({ pathname: "/share/invite" as any, params: { listId: selectedList?.id } }), color: "#1f2937" },
-                    { icon: "trash-o", label: "Delete", action: () => deleteList(selectedList?.id), destructive: true },
+                    { 
+                        icon: "smile-o", 
+                        label: "Change Icon", 
+                        action: () => { setActionModalVisible(false); setIconModalVisible(true); }, 
+                        color: COLORS.text,
+                    },
+                    { 
+                        icon: "clone", 
+                        label: "Duplicate", 
+                        action: () => duplicateList(selectedList), 
+                        color: COLORS.text,
+                    },
+                    { 
+                        icon: "share-alt", 
+                        label: "Share", 
+                        action: () => router.push({ pathname: "/share/invite" as any, params: { listId: selectedList?.id } }), 
+                        color: COLORS.text,
+                    },
+                    { 
+                        icon: "trash-o", 
+                        label: "Delete", 
+                        action: () => deleteList(selectedList?.id), 
+                        destructive: true,
+                    },
                 ]}
             />
 

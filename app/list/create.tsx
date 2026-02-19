@@ -1,33 +1,37 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, SafeAreaView, ActivityIndicator, Alert, ScrollView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, ScrollView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import { FontAwesome } from "@expo/vector-icons";
+
+const COLORS = {
+    bg: "#F4F6FC",
+    white: "#FFFFFF",
+    primary: "#6BA0D8",
+    primarySoft: "rgba(107, 160, 216, 0.1)",
+    accent: "#B39DDB",
+    text: "#1E293B",
+    textSecondary: "#5C6E82",
+    textTertiary: "#94A3B8",
+    border: "#DDE6F4",
+    borderLight: "#EEF3FA",
+};
 
 export default function CreateList() {
     const router = useRouter();
     const { user } = useAuth();
     const [name, setName] = useState("");
     const [loading, setLoading] = useState(false);
-    const [selectedIcon, setSelectedIcon] = useState("🛒");
+    const [selectedIcon, setSelectedIcon] = useState("list");
 
     const ICONS = [
-        // General Shopping
-        "🛒", "🛍️", "🏪", "🏬", "🏢", "🏷️", "💳",
-        // Spanish Supermarkets & General Staples
-        "🥦", "🥩", "🍞", "🥛", "🧀", "🥚", // Mercadona / Lidl / Consum vibes
-        "🍕", "🍔", "🥗", "🥘", "🥐", "🍷", "🍺",
-        // Supermarket Specific (Represented by colors)
-        "🟢", "🟡", "🔴", "🔵", "🟠", // Mercadona green, Lidl/Aldi colors
-        // Fashion (Zara, Bershka, SHEIN)
-        "👕", "👗", "👠", "👞", "👟", "👜", "🕶️", "💄", "💍", "👙", "🧤",
-        // Home & Electronics (IKEA, Amazon, Tech)
-        "🛋️", "🪑", "🛏️", "🚿", "🛠️", "🪴", "🪜", "🕯️", "📦", "🚚", "💻", "📱", "🎮", "🎧",
-        // Travel & Online (AliExpress, Temu, Travel)
-        "✈️", "🌍", "🗺️", "🧳", "🎟️", "🚢", "🚗", "🚲",
-        // Life & Pets
-        "💊", "🎁", "🎉", "💼", "🐶", "🐱", "🎈", "🎨", "📚", "🏀", "🎸"
+        "list", "check-square-o", "bookmark", "star", "heart",
+        "gift", "shopping-cart", "shopping-basket", "cutlery", "coffee",
+        "home", "briefcase", "plane", "car", "map-marker",
+        "music", "camera", "book", "lightbulb-o", "paint-brush",
+        "birthday-cake", "paw", "fire", "bell", "tag",
+        "leaf", "bicycle", "medkit", "beer", "snowflake-o",
     ];
 
     const handleCreate = async () => {
@@ -49,98 +53,143 @@ export default function CreateList() {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
-            <View style={{ flex: 1, paddingHorizontal: 24 }}>
-                <View style={{ paddingTop: 24, marginBottom: 32 }}>
-                    {/* Header */}
+            <View style={{ flex: 1, paddingHorizontal: 20 }}>
+                {/* Header */}
+                <View style={{ paddingTop: 20, marginBottom: 24 }}>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
-                        <Pressable onPress={() => router.back()} style={{ padding: 8 }}>
-                            <FontAwesome name="arrow-left" size={20} color="#1f2937" />
-                        </Pressable>
-                        <Text style={{ fontSize: 24, fontWeight: "800", marginLeft: 16, color: "#1f2937" }}>New List</Text>
+                        <TouchableOpacity 
+                            onPress={() => router.back()} 
+                            style={{
+                                padding: 10,
+                                backgroundColor: COLORS.white,
+                                borderRadius: 10,
+                                borderWidth: 1,
+                                borderColor: COLORS.border,
+                            }}
+                        >
+                            <FontAwesome name="arrow-left" size={18} color={COLORS.text} />
+                        </TouchableOpacity>
+                        <Text style={{ 
+                            fontSize: 22, 
+                            fontWeight: "800", 
+                            marginLeft: 16, 
+                            color: COLORS.text,
+                        }}>
+                            New List
+                        </Text>
                     </View>
                 </View>
 
-                <View style={{ flex: 1 }}>
-                    <View style={{ marginBottom: 32 }}>
-                        <Text style={{ marginBottom: 12, color: "#71717A", fontWeight: "600" }}>List name</Text>
-                        <TextInput
-                            style={{
-                                backgroundColor: "rgba(255,255,255,0.4)",
-                                padding: 20,
-                                borderRadius: 24,
-                                borderWidth: 1,
-                                borderColor: "rgba(255,255,255,0.5)",
-                                fontSize: 18,
-                                color: "#000000",
-                                fontWeight: "600"
-                            }}
-                            placeholder="e.g. Groceries"
-                            placeholderTextColor="#A1A1AA"
-                            value={name}
-                            onChangeText={setName}
-                            autoFocus
-                        />
+                <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+                    <View style={{ marginBottom: 24 }}>
+                        <Text style={{ 
+                            marginBottom: 10, 
+                            color: COLORS.textSecondary, 
+                            fontWeight: "800", 
+                            fontSize: 12, 
+                            textTransform: 'uppercase', 
+                            letterSpacing: 0.5,
+                        }}>
+                            List name
+                        </Text>
+                        <View style={{
+                            backgroundColor: COLORS.white,
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            borderColor: COLORS.border,
+                        }}>
+                            <TextInput
+                                style={{
+                                    padding: 18,
+                                    fontSize: 16,
+                                    color: COLORS.text,
+                                    fontWeight: "600",
+                                }}
+                                placeholder="e.g. Weekly groceries"
+                                placeholderTextColor={COLORS.textTertiary}
+                                value={name}
+                                onChangeText={setName}
+                                autoFocus
+                            />
+                        </View>
                     </View>
 
-                    <Text style={{ marginBottom: 12, color: "#71717A", fontWeight: "600" }}>Choose Icon</Text>
-                    <View style={{
-                        flex: 1,
-                        backgroundColor: "rgba(255,255,255,0.2)",
-                        borderRadius: 32,
-                        marginBottom: 24,
-                        borderWidth: 1,
-                        borderColor: "rgba(255,255,255,0.3)",
-                        overflow: "hidden",
-                        // @ts-ignore
-                        backdropFilter: "blur(20px)"
+                    <Text style={{ 
+                        marginBottom: 12, 
+                        color: COLORS.textSecondary, 
+                        fontWeight: "800", 
+                        fontSize: 12, 
+                        textTransform: 'uppercase', 
+                        letterSpacing: 0.5,
                     }}>
-                        <ScrollView contentContainerStyle={{ padding: 16 }} showsVerticalScrollIndicator={true}>
-                            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "flex-start" }}>
-                                {ICONS.map((icon, idx) => (
-                                    <Pressable
-                                        key={`${icon}-${idx}`}
-                                        onPress={() => setSelectedIcon(icon)}
-                                        style={{
-                                            height: 52,
-                                            width: 52,
-                                            borderRadius: 20,
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            borderWidth: 2,
-                                            borderColor: selectedIcon === icon ? "#FF7E73" : "transparent",
-                                            backgroundColor: selectedIcon === icon ? "#FF7E7315" : "rgba(255,255,255,0.4)",
-                                        }}
-                                    >
-                                        <Text style={{ fontSize: 26 }}>{icon}</Text>
-                                    </Pressable>
-                                ))}
-                            </View>
-                        </ScrollView>
+                        Choose Icon
+                    </Text>
+                    
+                    <View style={{
+                        backgroundColor: COLORS.white,
+                        borderRadius: 16,
+                        borderWidth: 1,
+                        borderColor: COLORS.border,
+                        padding: 16,
+                        marginBottom: 24,
+                    }}>
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "flex-start" }}>
+                            {ICONS.map((icon, idx) => (
+                                <TouchableOpacity
+                                    key={`${icon}-${idx}`}
+                                    onPress={() => setSelectedIcon(icon)}
+                                    style={{
+                                        height: 52,
+                                        width: 52,
+                                        borderRadius: 14,
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        borderWidth: 2,
+                                        borderColor: selectedIcon === icon ? COLORS.primary : COLORS.border,
+                                        backgroundColor: selectedIcon === icon ? COLORS.primarySoft : COLORS.white,
+                                    }}
+                                >
+                                    <FontAwesome
+                                        name={icon as any}
+                                        size={22}
+                                        color={selectedIcon === icon ? COLORS.primary : COLORS.textSecondary}
+                                    />
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </View>
 
                     {/* Create Button */}
-                    <Pressable
+                    <TouchableOpacity
                         onPress={handleCreate}
                         disabled={loading || !name.trim()}
-                        style={({ pressed }) => ({
-                            paddingVertical: 20,
-                            borderRadius: 24,
-                            alignItems: "center" as const,
-                            backgroundColor: (!name.trim() || loading) ? "#E5E7EB" : "#FF7E73",
-                            shadowColor: "#FF7E73",
-                            shadowOffset: { width: 0, height: 10 },
-                            shadowOpacity: (!name.trim() || loading) ? 0 : 0.3,
-                            shadowRadius: 15,
-                            marginBottom: 40
-                        })}
+                        style={{
+                            paddingVertical: 18,
+                            borderRadius: 14,
+                            alignItems: "center",
+                            backgroundColor: (!name.trim() || loading) ? COLORS.border : COLORS.primary,
+                            // @ts-ignore
+                            background: (!name.trim() || loading) ? COLORS.border : 'linear-gradient(135deg, #6BA0D8 0%, #B39DDB 100%)',
+                            marginBottom: 40,
+                            shadowColor: "#8A9FD8",
+                            shadowOffset: { width: 0, height: 5 },
+                            shadowOpacity: (!name.trim() || loading) ? 0 : 0.35,
+                            shadowRadius: 14,
+                        }}
                     >
                         {loading ? (
                             <ActivityIndicator color="white" />
                         ) : (
-                            <Text style={{ color: "white", fontWeight: "800", fontSize: 18 }}>Create List</Text>
+                            <Text style={{ 
+                                color: "white", 
+                                fontWeight: "700", 
+                                fontSize: 16,
+                            }}>
+                                Create List
+                            </Text>
                         )}
-                    </Pressable>
-                </View>
+                    </TouchableOpacity>
+                </ScrollView>
             </View>
         </SafeAreaView>
     );

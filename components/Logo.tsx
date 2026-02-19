@@ -14,32 +14,31 @@ export const Logo: React.FC<LogoProps> = ({ size = 44, showText = true }) => {
                 style={{
                     width: size,
                     height: size,
-                    borderRadius: size * 0.4,
-                    backgroundColor: "rgba(255, 126, 115, 0.12)", // More liquid coral
+                    borderRadius: size * 0.26,
+                    backgroundColor: "#1E3A6E",
+                    // @ts-ignore
+                    background: "linear-gradient(135deg, #1E3A6E 0%, #2D5BA3 100%)",
                     alignItems: "center",
                     justifyContent: "center",
-                    borderWidth: 1.5,
-                    borderColor: "rgba(255, 126, 115, 0.3)",
-                    shadowColor: "#FF7E73",
-                    shadowOpacity: 0.15,
+                    shadowColor: "#1E3A6E",
+                    shadowOpacity: 0.35,
                     shadowRadius: 12,
-                    // @ts-ignore
-                    backdropFilter: "blur(12px)",
+                    shadowOffset: { width: 0, height: 4 },
                 }}
             >
-                <FontAwesome name="shopping-bag" size={size * 0.5} color="#FF7E73" />
+                <FontAwesome name="list" size={size * 0.42} color="white" />
             </View>
             {showText && (
                 <Text
                     style={{
-                        marginLeft: 14,
-                        fontSize: size * 0.58,
-                        fontWeight: "900",
-                        color: "#000000",
-                        letterSpacing: -1.2,
+                        marginLeft: 10,
+                        fontSize: size * 0.56,
+                        fontWeight: "800",
+                        color: "#1E3A6E",
+                        letterSpacing: 1.5,
                     }}
                 >
-                    Grocery<Text style={{ color: "#FF7E73" }}>.</Text>
+                    LYST
                 </Text>
             )}
         </View>

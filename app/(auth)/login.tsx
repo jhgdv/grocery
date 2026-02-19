@@ -1,8 +1,23 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, SafeAreaView, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import { Logo } from "../../components/Logo";
 import { useRouter } from "expo-router";
 import { supabase } from "../../lib/supabase";
+
+const COLORS = {
+    bg: "#F4F6FC",
+    white: "#FFFFFF",
+    primary: "#6BA0D8",
+    primaryLight: "#91BBE6",
+    primarySoft: "rgba(107, 160, 216, 0.1)",
+    accent: "#B39DDB",
+    text: "#1E293B",
+    textSecondary: "#5C6E82",
+    textTertiary: "#94A3B8",
+    border: "#DDE6F4",
+    borderLight: "#EEF3FA",
+    danger: "#E58A8A",
+};
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -14,13 +29,8 @@ export default function Login() {
     const handleSendCode = async () => {
         setErrorMessage("");
 
-        if (!fullName.trim()) {
-            setErrorMessage("Please enter your name.");
-            return;
-        }
-
-        if (!email.trim()) {
-            setErrorMessage("Please enter your email address.");
+        if (!fullName.trim() || !email.trim()) {
+            setErrorMessage("Please fill in all fields.");
             return;
         }
 
@@ -45,8 +55,8 @@ export default function Login() {
             setLoading(false);
 
             if (error) {
-                if (error.message.toLowerCase().includes("rate") || error.status === 429) {
-                    setErrorMessage("Please wait — try again in 60 seconds.");
+                if (error.status === 429) {
+                    setErrorMessage("Too many requests. Please try again in 60 seconds.");
                 } else {
                     setErrorMessage(error.message);
                 }
@@ -58,11 +68,7 @@ export default function Login() {
             }
         } catch (err: any) {
             setLoading(false);
-            if (err?.message?.toLowerCase().includes("rate")) {
-                setErrorMessage("Please wait — try again in 60 seconds.");
-            } else {
-                setErrorMessage(err?.message || "Something went wrong. Please try again.");
-            }
+            setErrorMessage("Something went wrong. Please try again.");
         }
     };
 
@@ -70,130 +76,170 @@ export default function Login() {
         <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                style={{ flex: 1, justifyContent: "center", paddingHorizontal: 32 }}
+                style={{ flex: 1, justifyContent: "center", paddingHorizontal: 24 }}
             >
-                {/* Logo & Branding */}
-                <View style={{ alignItems: "center", marginBottom: 64 }}>
-                    <Logo size={80} />
-
-                    <Text style={{
-                        marginTop: 24,
-                        color: "#71717A",
-                        textAlign: "center",
-                        fontSize: 17,
-                        fontWeight: "500",
-                        lineHeight: 24,
-                        paddingHorizontal: 20
+                <View style={{ alignItems: "center", marginBottom: 40 }}>
+                    <View style={{
+                        width: 88,
+                        height: 88,
+                        borderRadius: 24,
+                        backgroundColor: COLORS.primarySoft,
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginBottom: 24,
+                        borderWidth: 1.5,
+                        borderColor: "rgba(107, 160, 216, 0.2)",
                     }}>
-                        Stay organized & share lists with your favorite people.
+                        <Logo size={52} />
+                    </View>
+                    <Text style={{
+                        fontSize: 28,
+                        fontWeight: "800",
+                        color: "#1E3A6E",
+                        marginBottom: 8,
+                        letterSpacing: 2,
+                    }}>
+                        LYST
+                    </Text>
+                    <Text style={{
+                        fontSize: 15,
+                        color: COLORS.textSecondary,
+                        fontWeight: "500",
+                        textAlign: "center",
+                    }}>
+                        Sign in to manage your lists
                     </Text>
                 </View>
 
-                {/* Form */}
-                <View>
+                <View style={{
+                    backgroundColor: COLORS.white,
+                    padding: 28,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    borderColor: COLORS.border,
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.05,
+                    shadowRadius: 10,
+                    elevation: 3,
+                }}>
                     {errorMessage ? (
-                        <View style={{
-                            backgroundColor: "#FFF1F1",
+                        <View style={{ 
+                            backgroundColor: "rgba(239, 68, 68, 0.1)", 
+                            padding: 14, 
+                            borderRadius: 10, 
+                            marginBottom: 20,
                             borderWidth: 1,
-                            borderColor: "#FF7E7320",
-                            borderRadius: 20,
-                            padding: 16,
-                            marginBottom: 24
+                            borderColor: "rgba(239, 68, 68, 0.2)",
                         }}>
-                            <Text style={{ color: "#FF7E73", fontSize: 14, fontWeight: "700", textAlign: "center" }}>
+                            <Text style={{ 
+                                color: COLORS.danger, 
+                                fontSize: 14, 
+                                fontWeight: "600", 
+                                textAlign: "center",
+                            }}>
                                 {errorMessage}
                             </Text>
                         </View>
                     ) : null}
 
-                    <View style={{ marginBottom: 16 }}>
+                    <View style={{ marginBottom: 18 }}>
+                        <Text style={{ 
+                            fontSize: 13, 
+                            fontWeight: "700", 
+                            color: COLORS.textSecondary, 
+                            marginBottom: 8, 
+                            textTransform: 'uppercase', 
+                            letterSpacing: 0.5,
+                        }}>
+                            Full Name
+                        </Text>
                         <TextInput
                             style={{
-                                width: "100%",
-                                backgroundColor: "white",
-                                paddingHorizontal: 24,
-                                paddingVertical: 20,
-                                borderRadius: 24,
-                                fontSize: 17,
-                                fontWeight: "600",
-                                color: "#000000",
-                                shadowColor: "#000",
-                                shadowOpacity: 0.04,
-                                shadowRadius: 12,
-                                elevation: 2,
+                                backgroundColor: COLORS.bg,
+                                padding: 16,
+                                borderRadius: 12,
+                                fontSize: 16,
+                                color: COLORS.text,
                                 borderWidth: 1,
-                                borderColor: "rgba(0,0,0,0.03)"
+                                borderColor: COLORS.border,
                             }}
-                            placeholder="Full Name"
-                            placeholderTextColor="#A1A1AA"
+                            placeholder="John Doe"
+                            placeholderTextColor={COLORS.textTertiary}
                             value={fullName}
-                            onChangeText={(text) => {
-                                setFullName(text);
-                                if (errorMessage) setErrorMessage("");
-                            }}
-                            autoCapitalize="words"
+                            onChangeText={setFullName}
                         />
                     </View>
 
-                    <View style={{ marginBottom: 32 }}>
+                    <View style={{ marginBottom: 24 }}>
+                        <Text style={{ 
+                            fontSize: 13, 
+                            fontWeight: "700", 
+                            color: COLORS.textSecondary, 
+                            marginBottom: 8, 
+                            textTransform: 'uppercase', 
+                            letterSpacing: 0.5,
+                        }}>
+                            Email Address
+                        </Text>
                         <TextInput
                             style={{
-                                width: "100%",
-                                backgroundColor: "white",
-                                paddingHorizontal: 24,
-                                paddingVertical: 20,
-                                borderRadius: 24,
-                                fontSize: 17,
-                                fontWeight: "600",
-                                color: "#000000",
-                                shadowColor: "#000",
-                                shadowOpacity: 0.04,
-                                shadowRadius: 12,
-                                elevation: 2,
+                                backgroundColor: COLORS.bg,
+                                padding: 16,
+                                borderRadius: 12,
+                                fontSize: 16,
+                                color: COLORS.text,
                                 borderWidth: 1,
-                                borderColor: "rgba(0,0,0,0.03)"
+                                borderColor: COLORS.border,
                             }}
-                            placeholder="Email Address"
-                            placeholderTextColor="#A1A1AA"
-                            value={email}
-                            onChangeText={(text) => {
-                                setEmail(text);
-                                if (errorMessage) setErrorMessage("");
-                            }}
+                            placeholder="name@company.com"
+                            placeholderTextColor={COLORS.textTertiary}
                             autoCapitalize="none"
                             keyboardType="email-address"
+                            value={email}
+                            onChangeText={setEmail}
                         />
                     </View>
 
-                    <Pressable
+                    <TouchableOpacity
                         onPress={handleSendCode}
                         disabled={loading}
-                        style={({ pressed }) => ({
-                            width: "100%",
-                            backgroundColor: pressed ? "#E66B61" : "#FF7E73",
-                            paddingVertical: 20,
-                            borderRadius: 24,
+                        style={{
+                            backgroundColor: COLORS.primary,
+                            // @ts-ignore
+                            background: 'linear-gradient(135deg, #6BA0D8 0%, #B39DDB 100%)',
+                            paddingVertical: 18,
+                            borderRadius: 14,
                             alignItems: "center",
-                            shadowColor: "#FF7E73",
-                            shadowOpacity: 0.3,
-                            shadowRadius: 15,
-                            shadowOffset: { width: 0, height: 8 },
-                            opacity: loading ? 0.7 : 1,
-                        })}
+                            shadowColor: "#8A9FD8",
+                            shadowOpacity: 0.35,
+                            shadowRadius: 14,
+                            shadowOffset: { width: 0, height: 5 },
+                        }}
                     >
                         {loading ? (
-                            <ActivityIndicator color="white" />
+                            <ActivityIndicator color="#ffffff" />
                         ) : (
-                            <Text style={{ color: "white", fontWeight: "800", fontSize: 18, letterSpacing: 1 }}>
+                            <Text style={{ 
+                                color: "#ffffff", 
+                                fontWeight: "700", 
+                                fontSize: 16,
+                            }}>
                                 Continue
                             </Text>
                         )}
-                    </Pressable>
-
-                    <Text style={{ textAlign: "center", color: "#A1A1AA", fontSize: 14, marginTop: 24, fontWeight: "600" }}>
-                        We'll send you a secure 6-digit code.
-                    </Text>
+                    </TouchableOpacity>
                 </View>
+
+                <Text style={{ 
+                    textAlign: "center", 
+                    marginTop: 32, 
+                    fontSize: 13, 
+                    color: COLORS.textTertiary, 
+                    fontWeight: "500",
+                }}>
+                    Secured by Supabase Authentication
+                </Text>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
