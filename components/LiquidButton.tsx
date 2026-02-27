@@ -1,125 +1,90 @@
 import React from "react";
-import { TouchableOpacity, View, StyleSheet, Text } from "react-native";
-import { BlurView } from "expo-blur";
+import { Text, TouchableOpacity, View } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
+import { BlurView } from "expo-blur";
+import { fonts, palette } from "../lib/design";
+
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonSize = "sm" | "md" | "lg";
 
 interface LiquidButtonProps {
-    onPress: () => void;
-    icon?: string;
-    label?: string;
-    variant?: "primary" | "secondary" | "ghost" | "danger";
-    size?: "sm" | "md" | "lg";
-    style?: any;
+  onPress: () => void;
+  icon?: keyof typeof FontAwesome.glyphMap;
+  label?: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  disabled?: boolean;
+  style?: any;
 }
+
+const SIZES = {
+  sm: { height: 36, px: 14, icon: 13, font: 13 },
+  md: { height: 44, px: 18, icon: 16, font: 14 },
+  lg: { height: 52, px: 24, icon: 18, font: 15 },
+};
+
+const VARIANTS: Record<ButtonVariant, { bg: string; border: string; text: string }> = {
+  primary: {
+    bg: palette.accent,
+    border: palette.accent,
+    text: "#fff",
+  },
+  secondary: {
+    bg: "rgba(255,255,255,0.56)",
+    border: palette.line,
+    text: palette.text,
+  },
+  ghost: {
+    bg: "rgba(255,255,255,0.24)",
+    border: palette.line,
+    text: palette.text,
+  },
+  danger: {
+    bg: "rgba(197,48,48,0.12)",
+    border: "rgba(197,48,48,0.35)",
+    text: palette.danger,
+  },
+};
 
 export function LiquidButton({
-    onPress,
-    icon,
-    label,
-    variant = "primary",
-    size = "md",
-    style
+  onPress,
+  icon,
+  label,
+  variant = "primary",
+  size = "md",
+  disabled = false,
+  style,
 }: LiquidButtonProps) {
-    const sizes = {
-        sm: { height: 36, paddingHorizontal: 16, iconSize: 14, fontSize: 13 },
-        md: { height: 44, paddingHorizontal: 20, iconSize: 16, fontSize: 14 },
-        lg: { height: 52, paddingHorizontal: 28, iconSize: 18, fontSize: 15 },
-    };
+  const s = SIZES[size];
+  const v = VARIANTS[variant];
 
-    const variants = {
-        primary: {
-            backgroundColor: "rgba(0, 0, 0, 0.9)",
-            borderColor: "rgba(255, 255, 255, 0.2)",
-            textColor: "#ffffff",
-        },
-        secondary: {
-            backgroundColor: "rgba(255, 255, 255, 0.6)",
-            borderColor: "rgba(255, 255, 255, 0.8)",
-            textColor: "#000000",
-        },
-        ghost: {
-            backgroundColor: "rgba(255, 255, 255, 0.2)",
-            borderColor: "rgba(255, 255, 255, 0.3)",
-            textColor: "#000000",
-        },
-        danger: {
-            backgroundColor: "rgba(239, 68, 68, 0.1)",
-            borderColor: "rgba(239, 68, 68, 0.3)",
-            textColor: "#ef4444",
-        },
-    };
-
-    const s = sizes[size];
-    const v = variants[variant];
-
-    return (
-        <TouchableOpacity
-            onPress={onPress}
-            activeOpacity={0.85}
-            style={[styles.button, { height: s.height }, style]}
+  return (
+    <TouchableOpacity
+      disabled={disabled}
+      onPress={onPress}
+      activeOpacity={0.88}
+      style={[{ opacity: disabled ? 0.55 : 1, borderRadius: s.height / 2, overflow: "hidden" }, style]}
+    >
+      <BlurView intensity={50} tint="light">
+        <View
+          style={{
+            minHeight: s.height,
+            paddingHorizontal: s.px,
+            borderRadius: s.height / 2,
+            backgroundColor: v.bg,
+            borderWidth: 1,
+            borderColor: v.border,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
         >
-            <BlurView
-                intensity={variant === "primary" ? 20 : 60}
-                tint={variant === "primary" ? "dark" : "light"}
-                style={[StyleSheet.absoluteFill, styles.blur]}
-            />
-            <View
-                style={[
-                    styles.content,
-                    {
-                        backgroundColor: v.backgroundColor,
-                        borderColor: v.borderColor,
-                        paddingHorizontal: s.paddingHorizontal,
-                    },
-                ]}
-            >
-                {icon && (
-                    <FontAwesome
-                        name={icon as any}
-                        size={s.iconSize}
-                        color={v.textColor}
-                        style={label ? styles.iconWithLabel : undefined}
-                    />
-                )}
-                {label && (
-                    <Text
-                        style={[
-                            styles.label,
-                            {
-                                color: v.textColor,
-                                fontSize: s.fontSize,
-                            },
-                        ]}
-                    >
-                        {label}
-                    </Text>
-                )}
-            </View>
-        </TouchableOpacity>
-    );
+          {icon ? <FontAwesome name={icon} size={s.icon} color={v.text} style={{ marginRight: label ? 8 : 0 }} /> : null}
+          {label ? (
+            <Text style={{ color: v.text, fontSize: s.font, fontWeight: "600", fontFamily: fonts.medium }}>{label}</Text>
+          ) : null}
+        </View>
+      </BlurView>
+    </TouchableOpacity>
+  );
 }
-
-const styles = StyleSheet.create({
-    button: {
-        borderRadius: 12,
-        overflow: "hidden",
-    },
-    blur: {
-        borderRadius: 12,
-    },
-    content: {
-        flex: 1,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: 12,
-        borderWidth: 1,
-    },
-    iconWithLabel: {
-        marginRight: 8,
-    },
-    label: {
-        fontWeight: "600",
-        fontFamily: "Plus Jakarta Sans",
-    },
-});

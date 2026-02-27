@@ -1,288 +1,214 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, Share } from "react-native";
-const isWeb = Platform.OS === "web";
-import { useLocalSearchParams, useRouter } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
-import { Container } from "../../components/Container";
-import { supabase } from "../../lib/supabase";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  Share,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+import { GlassCard } from "../../components/GlassCard";
+import { LiquidButton } from "../../components/LiquidButton";
+import { AnimatedGradientText } from "../../components/AnimatedGradientText";
 import { useAuth } from "../../context/AuthContext";
+import { useWorkspace } from "../../context/WorkspaceContext";
+import { friendlyError, palette, typeStyles } from "../../lib/design";
+import { supabase } from "../../lib/supabase";
 
-export default function InviteUser() {
-    const router = useRouter();
-    const { listId } = useLocalSearchParams<{ listId: string }>();
-    const { user } = useAuth();
-    const [email, setEmail] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [listName, setListName] = useState("a list");
-    const [isInvited, setIsInvited] = useState(false);
-    const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+export default function ShareInviteScreen() {
+  const router = useRouter();
+  const { workspaceId, listId } = useLocalSearchParams<{ workspaceId?: string; listId?: string }>();
+  const { user } = useAuth();
+  const { inviteToWorkspace } = useWorkspace();
 
-    React.useEffect(() => {
-        const fetchListName = async () => {
-            const { data } = await supabase.from("lists").select("name").eq("id", listId).single();
-            if (data?.name) setListName(data.name);
-        };
-        if (listId) fetchListName();
-    }, [listId]);
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [targetName, setTargetName] = useState("workspace");
+  const [message, setMessage] = useState<string | null>(null);
 
-    const handleInvite = async () => {
-        setStatusMessage(null);
-        if (!email || !email.includes("@")) {
-            setStatusMessage({ type: 'error', text: "Please enter a valid email address." });
-            return;
+  const isWorkspaceInvite = !!workspaceId;
+
+  useEffect(() => {
+    const fetchTarget = async () => {
+      if (workspaceId) {
+        const workspaceRes = await supabase.from("workspaces").select("name").eq("id", workspaceId).single();
+        if (!workspaceRes.error && workspaceRes.data?.name) {
+          setTargetName(workspaceRes.data.name);
+          return;
         }
+      }
 
-        setLoading(true);
-        try {
-            const { error } = await supabase
-                .from("list_shares")
-                .insert([
-                    {
-                        list_id: listId,
-                        invited_email: email.trim().toLowerCase(),
-                        status: 'pending',
-                        invited_by: user?.id
-                    }
-                ]);
-
-            if (error) {
-                if (error.code === 'PGRST205' || error.message.includes('not found')) {
-                    throw new Error("Database table 'list_shares' not found. You MUST run the SQL script in your Supabase dashboard first.");
-                }
-                throw error;
-            }
-
-            setIsInvited(true);
-            setStatusMessage({ type: 'success', text: `Success! ${email} is added.` });
-
-            // 2. Automated Email Sending (via background call)
-            try {
-                const baseUrl = 'https://grocery-app.vercel.app';
-                const emailResponse = await fetch('https://api.resend.com/emails', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${process.env.EXPO_PUBLIC_RESEND_API_KEY}`,
-                    },
-                    body: JSON.stringify({
-                        from: 'Grocery App <onboarding@resend.dev>',
-                        to: [email.toLowerCase().trim()],
-                        subject: `Invitation to collaborate on "${listName}"`,
-                        html: `
-                            <div style="font-family: sans-serif; padding: 20px; color: #333;">
-                                <h1 style="color: #FF7E73;">Hi!</h1>
-                                <p>I've invited you to collaborate on my grocery list <strong>"${listName}"</strong>.</p>
-                                <p>You can access it here: <a href="${baseUrl}" style="color: #FF7E73;">Open Grocery App</a></p>
-                                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-                                <p style="font-size: 12px; color: #999;">Make sure to log in with email: ${email}</p>
-                            </div>
-                        `,
-                    }),
-                });
-
-                if (emailResponse.ok) {
-                    setStatusMessage({ type: 'success', text: `Invitation sent automatically to ${email}!` });
-                } else {
-                    setStatusMessage({ type: 'success', text: `Success! Added ${email}. (Note: System email needs API Key)` });
-                }
-            } catch (e) {
-                console.log("Email failed", e);
-            }
-        } catch (error: any) {
-            setStatusMessage({ type: 'error', text: error.message || "Could not send invite." });
-        } finally {
-            setLoading(false);
+      if (listId) {
+        const listRes = await supabase.from("lists").select("name").eq("id", listId).single();
+        if (!listRes.error && listRes.data?.name) {
+          setTargetName(listRes.data.name);
         }
+      }
     };
 
-    return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
-            <View style={{
-                paddingHorizontal: 24,
-                paddingTop: 8,
-                paddingBottom: 16,
-                flexDirection: "row",
-                alignItems: "center"
-            }}>
-                <TouchableOpacity
-                    onPress={() => router.back()}
-                    style={{
-                        height: 48,
-                        width: 48,
-                        borderRadius: 24,
-                        backgroundColor: "white",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        shadowColor: "#000",
-                        shadowOpacity: 0.05,
-                        shadowRadius: 10,
-                        elevation: 2
-                    }}
-                >
-                    <FontAwesome name="chevron-left" size={16} color="#000000" />
-                </TouchableOpacity>
-                <Text style={{ fontSize: 22, fontWeight: "800", color: "#000000", marginLeft: 16 }}>Share List</Text>
+    fetchTarget();
+  }, [workspaceId, listId]);
+
+  const shareCopy = useMemo(() => {
+    const appUrl = process.env.EXPO_PUBLIC_APP_URL || "https://grocery-app.vercel.app";
+    const scope = isWorkspaceInvite ? "workspace" : "list";
+    return `You're invited to ${scope}: ${targetName}. Open LYST: ${appUrl}`;
+  }, [isWorkspaceInvite, targetName]);
+
+  const handleInvite = async () => {
+    setMessage(null);
+
+    if (!email.trim() || !email.includes("@")) {
+      setMessage("Please enter a valid email address.");
+      return;
+    }
+
+    if (!user) {
+      setMessage("You are not signed in.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (isWorkspaceInvite && workspaceId) {
+        const workspaceInviteRes = await inviteToWorkspace(workspaceId, email);
+        if (workspaceInviteRes.error) throw new Error(workspaceInviteRes.error);
+      } else {
+        if (!listId) throw new Error("No list selected.");
+
+        const insertRes = await supabase.from("list_shares").upsert([
+          {
+            list_id: listId,
+            invited_email: email.trim().toLowerCase(),
+            invited_by: user.id,
+            status: "pending",
+          },
+        ]);
+
+        if (insertRes.error) throw insertRes.error;
+      }
+
+      setMessage(`Invitation sent to ${email.toLowerCase().trim()}.`);
+    } catch (error) {
+      setMessage(friendlyError(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      if (Platform.OS === "web") {
+        if (typeof navigator !== "undefined" && navigator.clipboard) {
+          await navigator.clipboard.writeText(shareCopy);
+          Alert.alert("Copied", "Invite text copied to clipboard.");
+        }
+        return;
+      }
+
+      await Share.share({ message: shareCopy });
+    } catch (error) {
+      Alert.alert("Error", friendlyError(error));
+    }
+  };
+
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.background }}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+        <View style={{ paddingHorizontal: 18, paddingTop: 18, flex: 1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={{
+                width: 42,
+                height: 42,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: palette.line,
+                backgroundColor: "rgba(255,255,255,0.5)",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FontAwesome name="arrow-left" size={16} color={palette.text} />
+            </TouchableOpacity>
+            <AnimatedGradientText
+              text="Invite"
+              style={[typeStyles.h2, { marginLeft: 12 }]}
+              colors={["#7366F6", "#F472B6", "#7366F6"]}
+            />
+          </View>
+
+          <GlassCard style={{ padding: 16, marginBottom: 12 }}>
+            <Text style={typeStyles.label}>{isWorkspaceInvite ? "Workspace" : "List"}</Text>
+            <Text style={{ color: palette.text, fontSize: 18, fontWeight: "700", marginTop: 8 }}>{targetName}</Text>
+            <Text style={[typeStyles.body, { marginTop: 6 }]}>Invite your partner so you can edit and check off items together in real-time.</Text>
+          </GlassCard>
+
+          <GlassCard style={{ padding: 16, marginBottom: 12 }}>
+            <Text style={typeStyles.label}>Email</Text>
+            <View
+              style={{
+                marginTop: 8,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderColor: palette.line,
+                backgroundColor: "rgba(255,255,255,0.55)",
+              }}
+            >
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="partner@email.com"
+                placeholderTextColor={palette.textMuted}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                style={{ minHeight: 48, paddingHorizontal: 14, color: palette.text, fontSize: 16 }}
+              />
             </View>
 
-            <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                style={{ flex: 1, paddingHorizontal: 32 }}
-            >
-                <View style={{ alignItems: "center", marginBottom: 40, marginTop: 24 }}>
-                    <View style={{
-                        height: 100,
-                        width: 100,
-                        backgroundColor: "#FF7E7315",
-                        borderRadius: 35,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginBottom: 24
-                    }}>
-                        <FontAwesome name="envelope-o" size={40} color="#FF7E73" />
-                    </View>
-                    <Text style={{ fontSize: 32, fontWeight: "900", color: "#000000", marginBottom: 12, textAlign: "center" }}>
-                        Invite Someone
-                    </Text>
-                    <Text style={{ color: "#71717A", textAlign: "center", fontSize: 17, fontWeight: "500", lineHeight: 24 }}>
-                        Share this list with others to edit and check items together in real-time.
-                    </Text>
-                </View>
+            <View style={{ marginTop: 12, flexDirection: "row", gap: 10 }}>
+              <LiquidButton
+                onPress={handleInvite}
+                icon="user-plus"
+                label={loading ? "Sending..." : "Send invite"}
+                disabled={loading || !email.trim()}
+              />
+              <LiquidButton onPress={handleShare} icon="share-alt" label="Share link" variant="secondary" />
+            </View>
 
-                <View>
-                    {statusMessage && (
-                        <View style={{
-                            backgroundColor: statusMessage.type === 'error' ? '#FFF1F1' : '#F0FDF4',
-                            padding: 20,
-                            borderRadius: 24,
-                            marginBottom: 24,
-                            borderWidth: 1,
-                            borderColor: statusMessage.type === 'error' ? '#FF7E7320' : '#22C55E20'
-                        }}>
-                            <Text style={{ color: statusMessage.type === 'error' ? '#FF7E73' : '#16A34A', fontWeight: '800', textAlign: 'center' }}>
-                                {statusMessage.text}
-                            </Text>
-                        </View>
-                    )}
+            {loading ? (
+              <View style={{ marginTop: 10, alignItems: "center" }}>
+                <ActivityIndicator color={palette.text} />
+              </View>
+            ) : null}
 
-                    <Text style={{ color: "#000000", fontSize: 13, fontWeight: "800", marginBottom: 10, marginLeft: 6, textTransform: "uppercase", letterSpacing: 1.5 }}>Email Address</Text>
-                    <TextInput
-                        style={{
-                            backgroundColor: "white",
-                            paddingHorizontal: 24,
-                            paddingVertical: 20,
-                            borderRadius: 24,
-                            fontSize: 18,
-                            color: "#000000",
-                            fontWeight: "600",
-                            marginBottom: 24,
-                            borderWidth: 2,
-                            borderColor: "#FF7E7320",
-                            shadowColor: "#FF7E73",
-                            shadowOpacity: 0.05,
-                            shadowRadius: 10,
-                            elevation: 2
-                        }}
-                        placeholder="friend@example.com"
-                        placeholderTextColor="#A1A1AA"
-                        value={email}
-                        onChangeText={(text) => {
-                            setEmail(text);
-                            setIsInvited(false); // Reset if email changes
-                            setStatusMessage(null);
-                        }}
-                        autoCapitalize="none"
-                        keyboardType="email-address"
-                        autoFocus
-                    />
+            {message ? (
+              <View
+                style={{
+                  marginTop: 12,
+                  borderRadius: 12,
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  backgroundColor: "rgba(21,21,21,0.08)",
+                }}
+              >
+                <Text style={{ color: palette.textSoft }}>{message}</Text>
+              </View>
+            ) : null}
+          </GlassCard>
 
-                    <Pressable
-                        onPress={handleInvite}
-                        disabled={loading || !email}
-                        style={({ pressed }) => ({
-                            width: "100%",
-                            paddingVertical: 20,
-                            borderRadius: 24,
-                            alignItems: "center",
-                            backgroundColor: (!email || loading) ? "#E5E5EA" : pressed ? "#E66B61" : "#FF7E73",
-                            shadowColor: "#FF7E73",
-                            shadowOpacity: (!email || loading) ? 0 : 0.3,
-                            shadowRadius: 15,
-                            shadowOffset: { width: 0, height: 8 },
-                            marginBottom: 32
-                        })}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <Text style={{ color: "white", fontWeight: "800", fontSize: 18, letterSpacing: 1 }}>
-                                {isInvited ? "Invite Stored ✓" : "1. Add to List"}
-                            </Text>
-                        )}
-                    </Pressable>
-
-                    <Text style={{ color: "#000000", fontSize: 13, fontWeight: "800", marginBottom: 16, textAlign: "center", textTransform: "uppercase", letterSpacing: 1.5, opacity: isInvited ? 1 : 0.3 }}>
-                        2. Share the link
-                    </Text>
-
-                    <View style={{ flexDirection: "row", gap: 12 }}>
-                        <Pressable
-                            onPress={async () => {
-                                const baseUrl = 'https://grocery-app.vercel.app';
-                                const msg = `Hey! I shared the list "${listName}" with you. Join here: ${baseUrl}`;
-
-                                try {
-                                    if (Platform.OS === 'web') {
-                                        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-                                    } else {
-                                        await Share.share({ message: msg });
-                                    }
-                                } catch (e) { console.log(e); }
-                            }}
-                            style={({ pressed }) => ({
-                                flex: 1,
-                                paddingVertical: 18,
-                                borderRadius: 24,
-                                alignItems: "center",
-                                backgroundColor: isInvited ? (pressed ? "#F0FDF4" : "white") : "transparent",
-                                borderWidth: 2,
-                                borderColor: isInvited ? "#22C55E" : "#E5E5EA",
-                                opacity: isInvited ? 1 : 0.4
-                            })}
-                            disabled={!isInvited}
-                        >
-                            <FontAwesome name="whatsapp" size={20} color={isInvited ? "#22C55E" : "#A1A1AA"} />
-                        </Pressable>
-
-                        <Pressable
-                            onPress={() => {
-                                const baseUrl = 'https://grocery-app.vercel.app';
-                                const subject = encodeURIComponent(`Invitation to collaborate on "${listName}"`);
-                                const body = encodeURIComponent(`Hey!\n\nI've invited you to collaborate on my grocery list "${listName}".\n\nYou can access it here: ${baseUrl}\n\n(Make sure to log in with your email: ${email})`);
-                                window.open(`mailto:${email}?subject=${subject}&body=${body}`);
-                            }}
-                            style={({ pressed }) => ({
-                                flex: 1,
-                                paddingVertical: 18,
-                                borderRadius: 24,
-                                alignItems: "center",
-                                backgroundColor: isInvited ? (pressed ? "#F0F9FF" : "white") : "transparent",
-                                borderWidth: 2,
-                                borderColor: isInvited ? "#0EA5E9" : "#E5E5EA",
-                                opacity: isInvited ? 1 : 0.4
-                            })}
-                            disabled={!isInvited}
-                        >
-                            <FontAwesome name="envelope" size={18} color={isInvited ? "#0EA5E9" : "#A1A1AA"} />
-                        </Pressable>
-                    </View>
-
-                    {!isInvited && (
-                        <Text style={{ marginTop: 24, textAlign: "center", color: "#A1A1AA", fontSize: 14, fontStyle: "italic" }}>
-                            You must add the email to the list first so they have permission to see it.
-                        </Text>
-                    )}
-                </View>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
-    );
+          <Text style={[typeStyles.body, { textAlign: "center", marginTop: 6 }]}>Realtime updates are active via Supabase channels.</Text>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
 }

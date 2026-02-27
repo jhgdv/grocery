@@ -1,246 +1,135 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
-import { Logo } from "../../components/Logo";
 import { useRouter } from "expo-router";
+import React, { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+import { GlassCard } from "../../components/GlassCard";
+import { LiquidButton } from "../../components/LiquidButton";
+import { AnimatedGradientText } from "../../components/AnimatedGradientText";
+import { Logo } from "../../components/Logo";
+import { palette, typeStyles } from "../../lib/design";
 import { supabase } from "../../lib/supabase";
 
-const COLORS = {
-    bg: "#F4F6FC",
-    white: "#FFFFFF",
-    primary: "#6BA0D8",
-    primaryLight: "#91BBE6",
-    primarySoft: "rgba(107, 160, 216, 0.1)",
-    accent: "#B39DDB",
-    text: "#1E293B",
-    textSecondary: "#5C6E82",
-    textTertiary: "#94A3B8",
-    border: "#DDE6F4",
-    borderLight: "#EEF3FA",
-    danger: "#E58A8A",
-};
+export default function LoginScreen() {
+  const router = useRouter();
+  const emailInputRef = useRef<TextInput>(null);
 
-export default function Login() {
-    const [email, setEmail] = useState("");
-    const [fullName, setFullName] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [errorMessage, setErrorMessage] = useState("");
-    const router = useRouter();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    const handleSendCode = async () => {
-        setErrorMessage("");
+  const handleContinue = async () => {
+    setError(null);
 
-        if (!fullName.trim() || !email.trim()) {
-            setErrorMessage("Please fill in all fields.");
-            return;
-        }
+    if (!fullName.trim() || !email.trim()) {
+      setError("Please enter your name and email.");
+      return;
+    }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email.trim())) {
-            setErrorMessage("Please enter a valid email address.");
-            return;
-        }
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+    if (!isValidEmail) {
+      setError("Please enter a valid email address.");
+      return;
+    }
 
-        setLoading(true);
+    setLoading(true);
 
-        try {
-            const { error } = await supabase.auth.signInWithOtp({
-                email: email.trim(),
-                options: {
-                    data: {
-                        full_name: fullName.trim(),
-                    },
-                },
-            });
+    const result = await supabase.auth.signInWithOtp({
+      email: email.trim().toLowerCase(),
+      options: {
+        data: {
+          full_name: fullName.trim(),
+        },
+      },
+    });
 
-            setLoading(false);
+    setLoading(false);
 
-            if (error) {
-                if (error.status === 429) {
-                    setErrorMessage("Too many requests. Please try again in 60 seconds.");
-                } else {
-                    setErrorMessage(error.message);
-                }
-            } else {
-                router.push({
-                    pathname: "/(auth)/verify",
-                    params: { email: email.trim() },
-                });
-            }
-        } catch (err: any) {
-            setLoading(false);
-            setErrorMessage("Something went wrong. Please try again.");
-        }
-    };
+    if (result.error) {
+      if (result.error.status === 429) {
+        setError("Too many requests. Please try again in 1 minute.");
+      } else {
+        setError(result.error.message);
+      }
+      return;
+    }
 
-    return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                style={{ flex: 1, justifyContent: "center", paddingHorizontal: 24 }}
-            >
-                <View style={{ alignItems: "center", marginBottom: 40 }}>
-                    <View style={{
-                        width: 88,
-                        height: 88,
-                        borderRadius: 24,
-                        backgroundColor: COLORS.primarySoft,
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginBottom: 24,
-                        borderWidth: 1.5,
-                        borderColor: "rgba(107, 160, 216, 0.2)",
-                    }}>
-                        <Logo size={52} />
-                    </View>
-                    <Text style={{
-                        fontSize: 28,
-                        fontWeight: "800",
-                        color: "#1E3A6E",
-                        marginBottom: 8,
-                        letterSpacing: 2,
-                    }}>
-                        LYST
-                    </Text>
-                    <Text style={{
-                        fontSize: 15,
-                        color: COLORS.textSecondary,
-                        fontWeight: "500",
-                        textAlign: "center",
-                    }}>
-                        Sign in to manage your lists
-                    </Text>
-                </View>
+    router.push({ pathname: "/(auth)/verify", params: { email: email.trim().toLowerCase() } });
+  };
 
-                <View style={{
-                    backgroundColor: COLORS.white,
-                    padding: 28,
-                    borderRadius: 20,
-                    borderWidth: 1,
-                    borderColor: COLORS.border,
-                    shadowColor: "#000",
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowOpacity: 0.05,
-                    shadowRadius: 10,
-                    elevation: 3,
-                }}>
-                    {errorMessage ? (
-                        <View style={{ 
-                            backgroundColor: "rgba(239, 68, 68, 0.1)", 
-                            padding: 14, 
-                            borderRadius: 10, 
-                            marginBottom: 20,
-                            borderWidth: 1,
-                            borderColor: "rgba(239, 68, 68, 0.2)",
-                        }}>
-                            <Text style={{ 
-                                color: COLORS.danger, 
-                                fontSize: 14, 
-                                fontWeight: "600", 
-                                textAlign: "center",
-                            }}>
-                                {errorMessage}
-                            </Text>
-                        </View>
-                    ) : null}
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.background }}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, justifyContent: "center", paddingHorizontal: 20 }}>
+        <View style={{ alignItems: "center", marginBottom: 18 }}>
+          <Logo size={62} />
+          <AnimatedGradientText
+            text="Shared lists, real-time"
+            style={[typeStyles.h2, { marginTop: 14 }]}
+            colors={["#F9F4F2", "#a3a3a3", "#F9F4F2"]}
+          />
+          <Text style={[typeStyles.body, { marginTop: 4 }]}>Sign in with an email code</Text>
+        </View>
 
-                    <View style={{ marginBottom: 18 }}>
-                        <Text style={{ 
-                            fontSize: 13, 
-                            fontWeight: "700", 
-                            color: COLORS.textSecondary, 
-                            marginBottom: 8, 
-                            textTransform: 'uppercase', 
-                            letterSpacing: 0.5,
-                        }}>
-                            Full Name
-                        </Text>
-                        <TextInput
-                            style={{
-                                backgroundColor: COLORS.bg,
-                                padding: 16,
-                                borderRadius: 12,
-                                fontSize: 16,
-                                color: COLORS.text,
-                                borderWidth: 1,
-                                borderColor: COLORS.border,
-                            }}
-                            placeholder="John Doe"
-                            placeholderTextColor={COLORS.textTertiary}
-                            value={fullName}
-                            onChangeText={setFullName}
-                        />
-                    </View>
+        <GlassCard style={{ padding: 16 }}>
+          <Text style={typeStyles.label}>Name</Text>
+          <View style={{ marginTop: 8, borderRadius: 13, borderWidth: 1, borderColor: palette.line, backgroundColor: "rgba(255,255,255,0.55)" }}>
+            <TextInput
+              value={fullName}
+              onChangeText={setFullName}
+              placeholder="Your name"
+              placeholderTextColor={palette.textMuted}
+              style={{ minHeight: 48, paddingHorizontal: 13, color: palette.text, fontSize: 16 }}
+              returnKeyType="next"
+              onSubmitEditing={() => emailInputRef.current?.focus()}
+            />
+          </View>
 
-                    <View style={{ marginBottom: 24 }}>
-                        <Text style={{ 
-                            fontSize: 13, 
-                            fontWeight: "700", 
-                            color: COLORS.textSecondary, 
-                            marginBottom: 8, 
-                            textTransform: 'uppercase', 
-                            letterSpacing: 0.5,
-                        }}>
-                            Email Address
-                        </Text>
-                        <TextInput
-                            style={{
-                                backgroundColor: COLORS.bg,
-                                padding: 16,
-                                borderRadius: 12,
-                                fontSize: 16,
-                                color: COLORS.text,
-                                borderWidth: 1,
-                                borderColor: COLORS.border,
-                            }}
-                            placeholder="name@company.com"
-                            placeholderTextColor={COLORS.textTertiary}
-                            autoCapitalize="none"
-                            keyboardType="email-address"
-                            value={email}
-                            onChangeText={setEmail}
-                        />
-                    </View>
+          <Text style={[typeStyles.label, { marginTop: 14 }]}>Email</Text>
+          <View style={{ marginTop: 8, borderRadius: 13, borderWidth: 1, borderColor: palette.line, backgroundColor: "rgba(255,255,255,0.55)" }}>
+            <TextInput
+              ref={emailInputRef}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="you@email.com"
+              placeholderTextColor={palette.textMuted}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              style={{ minHeight: 48, paddingHorizontal: 13, color: palette.text, fontSize: 16 }}
+              returnKeyType="done"
+              onSubmitEditing={handleContinue}
+            />
+          </View>
 
-                    <TouchableOpacity
-                        onPress={handleSendCode}
-                        disabled={loading}
-                        style={{
-                            backgroundColor: COLORS.primary,
-                            // @ts-ignore
-                            background: 'linear-gradient(135deg, #6BA0D8 0%, #B39DDB 100%)',
-                            paddingVertical: 18,
-                            borderRadius: 14,
-                            alignItems: "center",
-                            shadowColor: "#8A9FD8",
-                            shadowOpacity: 0.35,
-                            shadowRadius: 14,
-                            shadowOffset: { width: 0, height: 5 },
-                        }}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color="#ffffff" />
-                        ) : (
-                            <Text style={{ 
-                                color: "#ffffff", 
-                                fontWeight: "700", 
-                                fontSize: 16,
-                            }}>
-                                Continue
-                            </Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
+          {error ? (
+            <View style={{ marginTop: 12, padding: 10, borderRadius: 10, backgroundColor: "rgba(197,48,48,0.12)" }}>
+              <Text style={{ color: palette.danger, fontWeight: "600", fontSize: 13 }}>{error}</Text>
+            </View>
+          ) : null}
 
-                <Text style={{ 
-                    textAlign: "center", 
-                    marginTop: 32, 
-                    fontSize: 13, 
-                    color: COLORS.textTertiary, 
-                    fontWeight: "500",
-                }}>
-                    Secured by Supabase Authentication
-                </Text>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
-    );
+          <View style={{ marginTop: 14 }}>
+            <LiquidButton onPress={handleContinue} icon="arrow-right" label={loading ? "Sending..." : "Continue"} size="lg" disabled={loading} />
+          </View>
+
+          {loading ? (
+            <View style={{ alignItems: "center", marginTop: 10 }}>
+              <ActivityIndicator color={palette.text} />
+            </View>
+          ) : null}
+        </GlassCard>
+
+        <TouchableOpacity onPress={() => emailInputRef.current?.focus()} style={{ marginTop: 16 }}>
+          <Text style={{ textAlign: "center", color: palette.textMuted }}>Use the same email your partner will use for invites.</Text>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
 }

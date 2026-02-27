@@ -1,207 +1,128 @@
-import React, { useState } from "react";
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    Modal,
-    ScrollView,
-    TouchableWithoutFeedback,
-    Dimensions
-} from "react-native";
+import React, { useMemo, useState } from "react";
+import { Dimensions, Modal, ScrollView, Text, TouchableOpacity, TouchableWithoutFeedback, View } from "react-native";
+import { BlurView } from "expo-blur";
 import { FontAwesome } from "@expo/vector-icons";
+import { fonts, palette, safeIconName } from "../lib/design";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-const COLORS = {
-    white: "#FFFFFF",
-    primary: "#6BA0D8",
-    primarySoft: "rgba(107, 160, 216, 0.1)",
-    dark: "#1E3A6E",
-    text: "#1E293B",
-    textSecondary: "#5C6E82",
-    textTertiary: "#94A3B8",
-    border: "#DDE6F4",
-    bg: "#F4F6FC",
-};
-
 type IconCategory = {
-    name: string;
-    icons: string[];
+  name: string;
+  icons: string[];
 };
 
 const CATEGORIES: IconCategory[] = [
-    {
-        name: "Essentials",
-        icons: ["list", "check-square-o", "bookmark", "star", "heart", "bell", "tag", "flag", "thumb-tack", "clock-o"],
-    },
-    {
-        name: "Shopping",
-        icons: ["shopping-cart", "shopping-basket", "gift", "cutlery", "coffee", "beer", "birthday-cake", "leaf", "apple", "lemon-o"],
-    },
-    {
-        name: "Work & Life",
-        icons: ["briefcase", "book", "lightbulb-o", "paint-brush", "camera", "music", "home", "map-marker", "plane", "car"],
-    },
-    {
-        name: "Hobbies",
-        icons: ["bicycle", "fire", "paw", "medkit", "snowflake-o", "gamepad", "futbol-o", "film", "headphones", "wrench"],
-    },
+  {
+    name: "General",
+    icons: ["list-ul", "check-square-o", "bookmark", "star", "heart", "bell", "tag", "flag", "thumb-tack", "clock-o"],
+  },
+  {
+    name: "Shopping",
+    icons: ["shopping-cart", "shopping-basket", "gift", "cutlery", "coffee", "birthday-cake", "leaf", "apple", "lemon-o"],
+  },
+  {
+    name: "Daily",
+    icons: ["home", "briefcase", "plane", "car", "map-marker", "book", "lightbulb-o", "camera", "music"],
+  },
 ];
 
 type IconPickerModalProps = {
-    visible: boolean;
-    onClose: () => void;
-    onSelect: (icon: string) => void;
-    selectedIcon?: string;
+  visible: boolean;
+  onClose: () => void;
+  onSelect: (icon: string) => void;
+  selectedIcon?: string;
 };
 
 export function IconPickerModal({ visible, onClose, onSelect, selectedIcon }: IconPickerModalProps) {
-    const [activeCategory, setActiveCategory] = useState("Essentials");
+  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].name);
 
-    if (!visible) return null;
+  const iconSize = useMemo(() => Math.max(52, (SCREEN_WIDTH - 72) / 5 - 10), []);
+  const currentIcons = CATEGORIES.find((category) => category.name === activeCategory)?.icons || CATEGORIES[0].icons;
 
-    const iconSize = (SCREEN_WIDTH - 64) / 5 - 10;
+  if (!visible) return null;
 
-    return (
-        <Modal
-            transparent
-            visible={visible}
-            animationType="slide"
-            onRequestClose={onClose}
-        >
-            <TouchableWithoutFeedback onPress={onClose}>
-                <View style={{
-                    flex: 1,
-                    backgroundColor: "rgba(0,0,0,0.4)",
-                    justifyContent: "flex-end",
-                }}>
-                    <TouchableWithoutFeedback>
-                        <View style={{
-                            backgroundColor: COLORS.white,
-                            borderTopLeftRadius: 24,
-                            borderTopRightRadius: 24,
-                            height: "72%",
-                            overflow: "hidden",
-                        }}>
-                            {/* Handle + Header */}
-                            <View style={{
-                                alignItems: "center",
-                                borderBottomWidth: 1,
-                                borderBottomColor: COLORS.border,
-                                paddingVertical: 16,
-                            }}>
-                                <View style={{
-                                    height: 4,
-                                    width: 40,
-                                    backgroundColor: COLORS.border,
-                                    borderRadius: 2,
-                                    marginBottom: 12,
-                                }} />
-                                <Text style={{
-                                    color: COLORS.text,
-                                    fontWeight: "800",
-                                    fontSize: 18,
-                                }}>
-                                    Choose Icon
-                                </Text>
-                                <TouchableOpacity
-                                    onPress={onClose}
-                                    style={{
-                                        position: "absolute",
-                                        right: 20,
-                                        top: 24,
-                                        width: 36,
-                                        height: 36,
-                                        borderRadius: 10,
-                                        backgroundColor: COLORS.bg,
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                    }}
-                                >
-                                    <FontAwesome name="times" size={16} color={COLORS.textSecondary} />
-                                </TouchableOpacity>
-                            </View>
+  return (
+    <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose}>
+      <TouchableWithoutFeedback onPress={onClose}>
+        <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0,0,0,0.26)" }}>
+          <TouchableWithoutFeedback>
+            <View
+              style={{
+                minHeight: "68%",
+                maxHeight: "82%",
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                overflow: "hidden",
+                borderWidth: 1,
+                borderColor: palette.line,
+              }}
+            >
+              <BlurView intensity={76} tint="light">
+                <View style={{ backgroundColor: "rgba(255,255,255,0.84)" }}>
+                  <View style={{ alignItems: "center", paddingTop: 10, paddingBottom: 14 }}>
+                    <View style={{ width: 38, height: 4, borderRadius: 999, backgroundColor: palette.lineStrong, marginBottom: 12 }} />
+                    <Text style={{ color: palette.text, fontSize: 18, fontWeight: "700", fontFamily: fonts.bold }}>Choose an icon</Text>
+                  </View>
 
-                            {/* Category Tabs */}
-                            <View style={{
-                                height: 52,
-                                borderBottomWidth: 1,
-                                borderBottomColor: COLORS.border,
-                            }}>
-                                <ScrollView
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                    contentContainerStyle={{ paddingHorizontal: 16, alignItems: "center", gap: 8 }}
-                                >
-                                    {CATEGORIES.map((cat) => (
-                                        <TouchableOpacity
-                                            key={cat.name}
-                                            onPress={() => setActiveCategory(cat.name)}
-                                            style={{
-                                                paddingHorizontal: 18,
-                                                paddingVertical: 8,
-                                                borderRadius: 20,
-                                                backgroundColor: activeCategory === cat.name ? COLORS.dark : COLORS.bg,
-                                                borderWidth: 1,
-                                                borderColor: activeCategory === cat.name ? COLORS.dark : COLORS.border,
-                                            }}
-                                        >
-                                            <Text style={{
-                                                fontWeight: "700",
-                                                fontSize: 13,
-                                                color: activeCategory === cat.name ? "#fff" : COLORS.textSecondary,
-                                            }}>
-                                                {cat.name}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </ScrollView>
-                            </View>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 10, gap: 8 }}
+                  >
+                    {CATEGORIES.map((category) => {
+                      const active = activeCategory === category.name;
+                      return (
+                        <TouchableOpacity
+                          key={category.name}
+                          onPress={() => setActiveCategory(category.name)}
+                          style={{
+                            borderRadius: 999,
+                            borderWidth: 1,
+                            borderColor: active ? palette.text : palette.line,
+                            backgroundColor: active ? palette.text : "rgba(255,255,255,0.4)",
+                            paddingHorizontal: 14,
+                            paddingVertical: 8,
+                          }}
+                        >
+                          <Text style={{ color: active ? "#fff" : palette.textSoft, fontWeight: "600", fontFamily: fonts.medium }}>{category.name}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
 
-                            {/* Icons Grid */}
-                            <ScrollView
-                                contentContainerStyle={{ padding: 20 }}
-                                showsVerticalScrollIndicator={false}
-                            >
-                                <View style={{
-                                    flexDirection: "row",
-                                    flexWrap: "wrap",
-                                    gap: 10,
-                                }}>
-                                    {CATEGORIES.find(c => c.name === activeCategory)?.icons.map((icon) => {
-                                        const isSelected = selectedIcon === icon;
-                                        return (
-                                            <TouchableOpacity
-                                                key={icon}
-                                                onPress={() => {
-                                                    onSelect(icon);
-                                                    onClose();
-                                                }}
-                                                style={{
-                                                    width: iconSize,
-                                                    height: iconSize,
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    borderRadius: 14,
-                                                    backgroundColor: isSelected ? COLORS.primarySoft : COLORS.bg,
-                                                    borderWidth: 2,
-                                                    borderColor: isSelected ? COLORS.primary : COLORS.border,
-                                                }}
-                                            >
-                                                <FontAwesome
-                                                    name={icon as any}
-                                                    size={22}
-                                                    color={isSelected ? COLORS.primary : COLORS.textSecondary}
-                                                />
-                                            </TouchableOpacity>
-                                        );
-                                    })}
-                                </View>
-                            </ScrollView>
-                        </View>
-                    </TouchableWithoutFeedback>
+                  <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 26, flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                    {currentIcons.map((icon) => {
+                      const safeIcon = safeIconName(icon);
+                      const selected = selectedIcon === icon;
+                      return (
+                        <TouchableOpacity
+                          key={icon}
+                          onPress={() => {
+                            onSelect(icon);
+                            onClose();
+                          }}
+                          style={{
+                            width: iconSize,
+                            height: iconSize,
+                            borderRadius: 14,
+                            borderWidth: 1,
+                            borderColor: selected ? palette.text : palette.line,
+                            backgroundColor: selected ? "rgba(21,21,21,0.12)" : "rgba(255,255,255,0.45)",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <FontAwesome name={safeIcon as keyof typeof FontAwesome.glyphMap} size={22} color={palette.text} />
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
                 </View>
-            </TouchableWithoutFeedback>
-        </Modal>
-    );
+              </BlurView>
+            </View>
+          </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </Modal>
+  );
 }

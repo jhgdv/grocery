@@ -5,15 +5,14 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        primary: "#6BA0D8",       // Calm light blue
-        accent: "#B39DDB",        // Soft lavender/purple
-        background: "#F4F6FC",   // Light blue-white
-        surface: "#FFFFFF",
-        muted: "#5C6E82",
-        border: "#DDE6F4",
+        background: "#f9f4f2",
+        text: "#151515",
+        accent: "#151515",
+        surface: "rgba(255,255,255,0.56)",
+        border: "rgba(21,21,21,0.16)",
       },
       fontFamily: {
-        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        sans: ["SF Pro Display", "SF Pro Text", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
       },
     },
   },

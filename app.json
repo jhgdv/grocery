@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#E8F2FF"
+      "backgroundColor": "#151515"
     },
     "ios": {
       "supportsTablet": true,
@@ -20,7 +20,7 @@
       "package": "com.lyst.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#E8F2FF"
+        "backgroundColor": "#151515"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
@@ -29,11 +29,18 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
       "output": "static",
-      "themeColor": "#1E3A6E"
+      "themeColor": "#151515"
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app needs access to your photos so you can attach them to list items.",
+          "cameraPermission": "The app needs access to your camera so you can take photos to attach to list items."
+        }
+      ]
     ]
   }
 }

@@ -1,196 +1,221 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, ScrollView, Platform } from "react-native";
-import { useRouter } from "expo-router";
-import { supabase } from "../../lib/supabase";
-import { useAuth } from "../../context/AuthContext";
 import { FontAwesome } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import React, { useMemo, useState } from "react";
+import { ActivityIndicator, SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
 
-const COLORS = {
-    bg: "#F4F6FC",
-    white: "#FFFFFF",
-    primary: "#6BA0D8",
-    primarySoft: "rgba(107, 160, 216, 0.1)",
-    accent: "#B39DDB",
-    text: "#1E293B",
-    textSecondary: "#5C6E82",
-    textTertiary: "#94A3B8",
-    border: "#DDE6F4",
-    borderLight: "#EEF3FA",
-};
+import { GlassCard } from "../../components/GlassCard";
+import { LiquidButton } from "../../components/LiquidButton";
+import { AnimatedGradientText } from "../../components/AnimatedGradientText";
+import { useAuth } from "../../context/AuthContext";
+import { useWorkspace } from "../../context/WorkspaceContext";
+import { friendlyError, palette, safeIconName, typeStyles } from "../../lib/design";
+import { supabase } from "../../lib/supabase";
 
-export default function CreateList() {
-    const router = useRouter();
-    const { user } = useAuth();
-    const [name, setName] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [selectedIcon, setSelectedIcon] = useState("list");
+const ICONS = [
+  "list-ul",
+  "shopping-basket",
+  "cutlery",
+  "check-square-o",
+  "home",
+  "briefcase",
+  "plane",
+  "map-marker",
+  "heart",
+  "coffee",
+  "book",
+  "car",
+  "camera",
+  "star",
+  "gift",
+  "leaf",
+  "music",
+  "fire",
+];
 
-    const ICONS = [
-        "list", "check-square-o", "bookmark", "star", "heart",
-        "gift", "shopping-cart", "shopping-basket", "cutlery", "coffee",
-        "home", "briefcase", "plane", "car", "map-marker",
-        "music", "camera", "book", "lightbulb-o", "paint-brush",
-        "birthday-cake", "paw", "fire", "bell", "tag",
-        "leaf", "bicycle", "medkit", "beer", "snowflake-o",
-    ];
+export default function CreateListScreen() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { activeWorkspaceId, activeWorkspace, schemaReady } = useWorkspace();
 
-    const handleCreate = async () => {
-        if (!name.trim()) return;
-        setLoading(true);
-        try {
-            const { error } = await supabase
-                .from("lists")
-                .insert([{ name: name.trim(), user_id: user?.id, icon: selectedIcon }]);
-            if (error) throw error;
-            router.back();
-        } catch (error: any) {
-            console.log("Error creating list", error);
-            Alert.alert("Error", "Could not create list.");
-        } finally {
-            setLoading(false);
+  const [name, setName] = useState("");
+  const [selectedIcon, setSelectedIcon] = useState("list-ul");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const canCreate = useMemo(() => !!name.trim() && !!user, [name, user?.id]);
+
+  const handleCreate = async () => {
+    if (!canCreate) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const payload: any = {
+        name: name.trim(),
+        icon: selectedIcon,
+        user_id: user?.id,
+      };
+
+      // Voeg workspace_id toe als de schema klaar is en er een echte workspace is
+      if (schemaReady && activeWorkspaceId && activeWorkspaceId !== "personal") {
+        payload.workspace_id = activeWorkspaceId;
+      }
+
+      const res = await supabase.from("lists").insert([payload]);
+
+      if (res.error) {
+        // Als workspace_id de oorzaak is, probeer opnieuw zonder
+        if (res.error.code === "42501" && payload.workspace_id) {
+          console.warn("Workspace insert blocked, retrying without workspace_id:", res.error.message);
+          delete payload.workspace_id;
+          const retry = await supabase.from("lists").insert([payload]);
+          if (retry.error) throw retry.error;
+        } else {
+          throw res.error;
         }
-    };
+      }
 
-    return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
-            <View style={{ flex: 1, paddingHorizontal: 20 }}>
-                {/* Header */}
-                <View style={{ paddingTop: 20, marginBottom: 24 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
-                        <TouchableOpacity 
-                            onPress={() => router.back()} 
-                            style={{
-                                padding: 10,
-                                backgroundColor: COLORS.white,
-                                borderRadius: 10,
-                                borderWidth: 1,
-                                borderColor: COLORS.border,
-                            }}
-                        >
-                            <FontAwesome name="arrow-left" size={18} color={COLORS.text} />
-                        </TouchableOpacity>
-                        <Text style={{ 
-                            fontSize: 22, 
-                            fontWeight: "800", 
-                            marginLeft: 16, 
-                            color: COLORS.text,
-                        }}>
-                            New List
-                        </Text>
-                    </View>
-                </View>
+      router.back();
+    } catch (err) {
+      console.error("Create list error:", err);
+      setError(friendlyError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
 
-                <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
-                    <View style={{ marginBottom: 24 }}>
-                        <Text style={{ 
-                            marginBottom: 10, 
-                            color: COLORS.textSecondary, 
-                            fontWeight: "800", 
-                            fontSize: 12, 
-                            textTransform: 'uppercase', 
-                            letterSpacing: 0.5,
-                        }}>
-                            List name
-                        </Text>
-                        <View style={{
-                            backgroundColor: COLORS.white,
-                            borderRadius: 12,
-                            borderWidth: 1,
-                            borderColor: COLORS.border,
-                        }}>
-                            <TextInput
-                                style={{
-                                    padding: 18,
-                                    fontSize: 16,
-                                    color: COLORS.text,
-                                    fontWeight: "600",
-                                }}
-                                placeholder="e.g. Weekly groceries"
-                                placeholderTextColor={COLORS.textTertiary}
-                                value={name}
-                                onChangeText={setName}
-                                autoFocus
-                            />
-                        </View>
-                    </View>
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: palette.background }}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: 18,
+          paddingTop: 18,
+          paddingBottom: 28,
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: palette.line,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "rgba(255,255,255,0.55)",
+            }}
+          >
+            <FontAwesome name="arrow-left" size={16} color={palette.text} />
+          </TouchableOpacity>
 
-                    <Text style={{ 
-                        marginBottom: 12, 
-                        color: COLORS.textSecondary, 
-                        fontWeight: "800", 
-                        fontSize: 12, 
-                        textTransform: 'uppercase', 
-                        letterSpacing: 0.5,
-                    }}>
-                        Choose Icon
-                    </Text>
-                    
-                    <View style={{
-                        backgroundColor: COLORS.white,
-                        borderRadius: 16,
-                        borderWidth: 1,
-                        borderColor: COLORS.border,
-                        padding: 16,
-                        marginBottom: 24,
-                    }}>
-                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "flex-start" }}>
-                            {ICONS.map((icon, idx) => (
-                                <TouchableOpacity
-                                    key={`${icon}-${idx}`}
-                                    onPress={() => setSelectedIcon(icon)}
-                                    style={{
-                                        height: 52,
-                                        width: 52,
-                                        borderRadius: 14,
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        borderWidth: 2,
-                                        borderColor: selectedIcon === icon ? COLORS.primary : COLORS.border,
-                                        backgroundColor: selectedIcon === icon ? COLORS.primarySoft : COLORS.white,
-                                    }}
-                                >
-                                    <FontAwesome
-                                        name={icon as any}
-                                        size={22}
-                                        color={selectedIcon === icon ? COLORS.primary : COLORS.textSecondary}
-                                    />
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
+          <AnimatedGradientText
+            text="New list"
+            style={[typeStyles.h2, { marginLeft: 12 }]}
+            colors={["#7366F6", "#F472B6", "#7366F6"]}
+          />
+        </View>
 
-                    {/* Create Button */}
-                    <TouchableOpacity
-                        onPress={handleCreate}
-                        disabled={loading || !name.trim()}
-                        style={{
-                            paddingVertical: 18,
-                            borderRadius: 14,
-                            alignItems: "center",
-                            backgroundColor: (!name.trim() || loading) ? COLORS.border : COLORS.primary,
-                            // @ts-ignore
-                            background: (!name.trim() || loading) ? COLORS.border : 'linear-gradient(135deg, #6BA0D8 0%, #B39DDB 100%)',
-                            marginBottom: 40,
-                            shadowColor: "#8A9FD8",
-                            shadowOffset: { width: 0, height: 5 },
-                            shadowOpacity: (!name.trim() || loading) ? 0 : 0.35,
-                            shadowRadius: 14,
-                        }}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color="white" />
-                        ) : (
-                            <Text style={{ 
-                                color: "white", 
-                                fontWeight: "700", 
-                                fontSize: 16,
-                            }}>
-                                Create List
-                            </Text>
-                        )}
-                    </TouchableOpacity>
-                </ScrollView>
-            </View>
-        </SafeAreaView>
-    );
+        <GlassCard style={{ padding: 16, marginBottom: 12 }}>
+          <Text style={typeStyles.label}>Workspace</Text>
+          <Text style={{ color: palette.text, fontSize: 16, fontWeight: "700", marginTop: 8 }}>
+            {activeWorkspace?.name || "Personal"}
+          </Text>
+          <Text style={[typeStyles.body, { marginTop: 4 }]}>
+            This list will be shared inside this workspace.
+          </Text>
+        </GlassCard>
+
+        <GlassCard style={{ padding: 16, marginBottom: 12 }}>
+          <Text style={typeStyles.label}>Name</Text>
+          <View
+            style={{
+              marginTop: 8,
+              borderRadius: 14,
+              borderWidth: 1,
+              borderColor: name.trim() ? palette.accent : palette.line,
+              backgroundColor: "rgba(255,255,255,0.5)",
+            }}
+          >
+            <TextInput
+              value={name}
+              onChangeText={(text) => {
+                setName(text);
+                setError(null);
+              }}
+              placeholder="e.g. Groceries, restaurants, home tasks"
+              placeholderTextColor={palette.textMuted}
+              style={{ minHeight: 48, paddingHorizontal: 14, color: palette.text, fontSize: 16 }}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleCreate}
+            />
+          </View>
+        </GlassCard>
+
+        <GlassCard style={{ padding: 16, marginBottom: 20 }}>
+          <Text style={typeStyles.label}>Icon</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
+            {ICONS.map((icon) => {
+              const selected = selectedIcon === icon;
+              return (
+                <TouchableOpacity
+                  key={icon}
+                  onPress={() => setSelectedIcon(icon)}
+                  style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: selected ? palette.accent : palette.line,
+                    backgroundColor: selected ? "rgba(115,102,246,0.12)" : "rgba(255,255,255,0.45)",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <FontAwesome
+                    name={safeIconName(icon) as keyof typeof FontAwesome.glyphMap}
+                    size={20}
+                    color={selected ? palette.accent : palette.text}
+                  />
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </GlassCard>
+
+        {error ? (
+          <View
+            style={{
+              marginBottom: 12,
+              padding: 14,
+              borderRadius: 14,
+              backgroundColor: "rgba(229,62,62,0.1)",
+              borderWidth: 1,
+              borderColor: "rgba(229,62,62,0.25)",
+            }}
+          >
+            <Text style={{ color: palette.danger, fontSize: 14, fontWeight: "600" }}>{error}</Text>
+          </View>
+        ) : null}
+
+        <LiquidButton
+          onPress={handleCreate}
+          label={loading ? "Creating..." : "Create list"}
+          icon="check"
+          size="lg"
+          disabled={!canCreate || loading}
+        />
+
+        {loading ? (
+          <View style={{ marginTop: 10, alignItems: "center" }}>
+            <ActivityIndicator color={palette.accent} />
+          </View>
+        ) : null}
+      </ScrollView>
+    </SafeAreaView>
+  );
 }
