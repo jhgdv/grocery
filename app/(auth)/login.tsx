@@ -75,26 +75,25 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: palette.background }}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1, justifyContent: "center", paddingHorizontal: 20 }}>
-        <View style={{ alignItems: "center", marginBottom: 18 }}>
+        <View style={{ alignItems: "center", marginBottom: 24 }}>
           <Logo size={62} />
           <AnimatedGradientText
-            text="Shared lists, real-time"
-            style={[typeStyles.h2, { marginTop: 14 }]}
+            text="Life, perfectly in sync."
+            style={[typeStyles.h2, { marginTop: 18 }]}
             colors={["#F9F4F2", "#a3a3a3", "#F9F4F2"]}
           />
-          <Text style={[typeStyles.body, { marginTop: 4 }]}>Sign in with an email code</Text>
         </View>
 
-        <View style={{ flexDirection: "row", marginBottom: 16, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 12, padding: 4 }}>
+        <View style={{ flexDirection: "row", alignSelf: "center", marginBottom: 24, backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 12, padding: 4 }}>
           <TouchableOpacity
             onPress={() => setIsLogin(true)}
-            style={{ flex: 1, paddingVertical: 10, alignItems: "center", backgroundColor: isLogin ? "rgba(255,255,255,0.25)" : "transparent", borderRadius: 10 }}
+            style={{ paddingHorizontal: 28, paddingVertical: 10, alignItems: "center", backgroundColor: isLogin ? "rgba(255,255,255,0.25)" : "transparent", borderRadius: 10 }}
           >
             <Text style={{ color: isLogin ? palette.text : palette.textMuted, fontWeight: "600", fontSize: 15 }}>Log In</Text>
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setIsLogin(false)}
-            style={{ flex: 1, paddingVertical: 10, alignItems: "center", backgroundColor: !isLogin ? "rgba(255,255,255,0.25)" : "transparent", borderRadius: 10 }}
+            style={{ paddingHorizontal: 28, paddingVertical: 10, alignItems: "center", backgroundColor: !isLogin ? "rgba(255,255,255,0.25)" : "transparent", borderRadius: 10 }}
           >
             <Text style={{ color: !isLogin ? palette.text : palette.textMuted, fontWeight: "600", fontSize: 15 }}>Create Account</Text>
           </TouchableOpacity>
@@ -151,9 +150,7 @@ export default function LoginScreen() {
           ) : null}
         </GlassCard>
 
-        <TouchableOpacity onPress={() => emailInputRef.current?.focus()} style={{ marginTop: 16 }}>
-          <Text style={{ textAlign: "center", color: palette.textMuted }}>Use the same email your partner will use for invites.</Text>
-        </TouchableOpacity>
+
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
